@@ -4,6 +4,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
   const accountIdJson = JSON.stringify(analysis.accountId || "").replace(/</g, "\\u003c");
   const opportunitiesJson = JSON.stringify(context.opportunities || []).replace(/</g, "\\u003c");
   const accountMetricsJson = JSON.stringify(context.accountMetrics || {}).replace(/</g, "\\u003c");
+  const issuesJson = JSON.stringify(context.issues || []).replace(/</g, "\\u003c");
 
   return `<!doctype html>
 <html lang="en">
@@ -246,14 +247,19 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
       .nav-item {
         align-items: center;
+        background: transparent;
+        border: 0;
         border-radius: var(--radius-md);
         color: var(--text-2);
         cursor: pointer;
         display: flex;
+        font: inherit;
         font-size: 13px;
         font-weight: 400;
         gap: 8px;
         padding: 6px 8px;
+        text-align: left;
+        width: 100%;
       }
       .nav-item:hover { background: var(--primary-soft); color: var(--text); }
       .nav-item.active {
@@ -261,6 +267,92 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         color: var(--primary);
         font-weight: 500;
       }
+      .stage-view[hidden] { display: none; }
+      .issues-list, .contacts-list-view, .overview-grid {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .issue-row {
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 80px 1fr auto auto;
+        padding: 14px 18px;
+      }
+      .issue-row:last-child { border-bottom: 0; }
+      .issue-row:nth-child(even) { background: #fafafb; }
+      .issue-num { color: var(--muted); font-size: 13px; font-weight: 500; }
+      .issue-title { font-size: 14px; font-weight: 700; line-height: 1.3; }
+      .issue-meta { color: var(--muted); font-size: 12px; margin-top: 3px; }
+      .issue-state-pill {
+        background: #eef2f6;
+        border-radius: 999px;
+        color: #475467;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 4px 10px;
+        text-transform: uppercase;
+      }
+      .issue-state-pill.open { background: #fdf3d7; color: #6e5208; }
+      .issue-state-pill.triaged { background: #f1edff; color: var(--purple); }
+      .issue-state-pill.logged { background: #eef2f6; color: #475467; }
+      .issue-state-pill.resolved { background: #e3f7eb; color: #0f6b34; }
+      .issue-state-pill.closed { background: #eef2f6; color: #475467; }
+      .issue-assignee {
+        align-items: center;
+        background: var(--primary-soft);
+        border-radius: 50%;
+        color: var(--primary);
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        height: 24px;
+        justify-content: center;
+        width: 24px;
+      }
+      .contact-row {
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 36px 1fr 1fr auto;
+        padding: 14px 18px;
+      }
+      .contact-row:last-child { border-bottom: 0; }
+      .contact-row:hover { background: #fafafb; cursor: pointer; }
+      .contact-row-photo {
+        align-items: center;
+        background: var(--primary-soft);
+        border-radius: 50%;
+        color: var(--primary);
+        display: flex;
+        font-size: 12px;
+        font-weight: 700;
+        height: 36px;
+        justify-content: center;
+        width: 36px;
+      }
+      .contact-row-name { font-size: 14px; font-weight: 700; }
+      .contact-row-title { color: var(--muted); font-size: 12px; margin-top: 2px; }
+      .contact-row-email { color: var(--muted); font-size: 12px; }
+      .overview-cards {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
+      .overview-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+      .overview-card-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+      .overview-card-value { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; margin-top: 4px; }
+      .overview-card-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
       .nav-section-label {
         color: var(--muted);
         font-size: 11px;
@@ -1711,10 +1803,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           <div class="summary-renewal" id="summary-renewal"></div>
         </div>
         <div class="nav-list">
-          <div class="nav-item">Overview</div>
-          <div class="nav-item">Issues</div>
-          <div class="nav-item active">Org Chart Mapper</div>
-          <div class="nav-item">Contacts</div>
+          <button type="button" class="nav-item" data-nav="overview">Overview</button>
+          <button type="button" class="nav-item" data-nav="issues">Issues</button>
+          <button type="button" class="nav-item active" data-nav="org-map">Org Chart Mapper</button>
+          <button type="button" class="nav-item" data-nav="contacts">Contacts</button>
         </div>
         <div class="nav-section-label">Opportunities</div>
         <div class="opp-list" id="opp-list"></div>
@@ -1742,34 +1834,57 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           </div>
         </header>
         <main class="stage">
-          <div class="stage-head">
-            <div>
-              <h1>Org Chart Mapper</h1>
-              <div class="muted">Build account hierarchy by dragging contacts from the right panel into the map.</div>
+          <div data-view="org-map" class="stage-view">
+            <div class="stage-head">
+              <div>
+                <h1>Org Chart Mapper</h1>
+                <div class="muted">Build account hierarchy by dragging contacts from the right panel into the map.</div>
+              </div>
+              <div class="stage-actions">
+                <button type="button" class="primary" id="make-connection">Make a connection</button>
+                <button type="button" class="secondary" id="clear-chart">Clear chart</button>
+              </div>
             </div>
-            <div class="stage-actions">
-              <button type="button" class="primary" id="make-connection">Make a connection</button>
-              <button type="button" class="secondary" id="clear-chart">Clear chart</button>
-            </div>
+            <section class="map-panel" aria-label="Org chart map">
+              <div class="zoom-controls" role="group" aria-label="Zoom">
+                <button type="button" class="zoom-btn" id="zoom-out" aria-label="Zoom out">−</button>
+                <button type="button" class="zoom-btn zoom-level" id="zoom-fit" aria-label="Fit to view">100%</button>
+                <button type="button" class="zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
+              </div>
+              <div id="org-tree" class="tree"></div>
+            </section>
+            <section class="insights">
+              <div class="insight-card">
+                <h2>Next Moves</h2>
+                <ul>${analysis.nextMoves.map((move) => `<li>${escapeHtml(move)}</li>`).join("")}</ul>
+              </div>
+              <div class="insight-card">
+                <h2>Gaps</h2>
+                <ul>${(analysis.gaps.length ? analysis.gaps : ["No critical account-map gaps found."]).map((gap) => `<li>${escapeHtml(gap)}</li>`).join("")}</ul>
+              </div>
+            </section>
           </div>
-          <section class="map-panel" aria-label="Org chart map">
-            <div class="zoom-controls" role="group" aria-label="Zoom">
-              <button type="button" class="zoom-btn" id="zoom-out" aria-label="Zoom out">−</button>
-              <button type="button" class="zoom-btn zoom-level" id="zoom-fit" aria-label="Fit to view">100%</button>
-              <button type="button" class="zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
+
+          <div data-view="overview" class="stage-view" hidden>
+            <div class="stage-head"><div><h1>Overview</h1><div class="muted">${escapeHtml(analysis.accountName)} — account summary and active opportunities.</div></div></div>
+            <div id="overview-content"></div>
+          </div>
+
+          <div data-view="issues" class="stage-view" hidden>
+            <div class="stage-head">
+              <div><h1>Issues</h1><div class="muted">Pylon issues raised by contacts at this account.</div></div>
+              <div class="stage-actions">
+                <button type="button" class="secondary" id="issues-filter">Filter</button>
+                <button type="button" class="primary" id="issues-log">+ Log issue</button>
+              </div>
             </div>
-            <div id="org-tree" class="tree"></div>
-          </section>
-          <section class="insights">
-            <div class="insight-card">
-              <h2>Next Moves</h2>
-              <ul>${analysis.nextMoves.map((move) => `<li>${escapeHtml(move)}</li>`).join("")}</ul>
-            </div>
-            <div class="insight-card">
-              <h2>Gaps</h2>
-              <ul>${(analysis.gaps.length ? analysis.gaps : ["No critical account-map gaps found."]).map((gap) => `<li>${escapeHtml(gap)}</li>`).join("")}</ul>
-            </div>
-          </section>
+            <div id="issues-content" class="issues-list"></div>
+          </div>
+
+          <div data-view="contacts" class="stage-view" hidden>
+            <div class="stage-head"><div><h1>Contacts</h1><div class="muted">All contacts pulled from Pylon for this account.</div></div></div>
+            <div id="contacts-content" class="contacts-list-view"></div>
+          </div>
         </main>
       </section>
       <aside class="contacts-panel" aria-label="Contacts sidebar">
@@ -1861,6 +1976,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const accountId = ${accountIdJson};
       const opportunities = ${opportunitiesJson};
       const accountMetrics = ${accountMetricsJson};
+      const issues = ${issuesJson};
       const opportunitiesById = new Map(opportunities.map((o) => [o.id, o]));
       const peopleById = new Map(people.map((person) => [person.id, person]));
 
@@ -2262,6 +2378,102 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
 
       applySuggestedLayout();
       render();
+      setupNavigation();
+
+      function setupNavigation() {
+        const navItems = document.querySelectorAll(".nav-item[data-nav]");
+        const views = document.querySelectorAll(".stage-view[data-view]");
+        navItems.forEach((item) => {
+          item.addEventListener("click", () => {
+            const target = item.dataset.nav;
+            navItems.forEach((n) => n.classList.toggle("active", n === item));
+            views.forEach((v) => { v.hidden = v.dataset.view !== target; });
+            if (target === "overview") renderOverview();
+            else if (target === "issues") renderIssues();
+            else if (target === "contacts") renderContactsList();
+          });
+        });
+      }
+
+      function renderOverview() {
+        const container = document.querySelector("#overview-content");
+        if (!container) return;
+        const arr = accountMetrics.currentArr ? formatCurrency(accountMetrics.currentArr) : "—";
+        const health = accountMetrics.healthScore != null ? \`\${accountMetrics.healthScore}/10\` : "—";
+        const renewal = accountMetrics.renewalDate ? formatDate(accountMetrics.renewalDate) : "—";
+        const totalContacts = people.length;
+        const openIssues = issues.filter((i) => !["closed", "resolved"].includes(i.state || "")).length;
+        const oppCount = opportunities.length;
+        container.innerHTML = \`
+          <div class="overview-cards">
+            <div class="overview-card"><div class="overview-card-label">ARR</div><div class="overview-card-value">\${arr}</div><div class="overview-card-sub">Current annual recurring</div></div>
+            <div class="overview-card"><div class="overview-card-label">Health</div><div class="overview-card-value">\${health}</div><div class="overview-card-sub">Pylon score</div></div>
+            <div class="overview-card"><div class="overview-card-label">Renewal</div><div class="overview-card-value" style="font-size:16px">\${renewal}</div><div class="overview-card-sub">Next renewal date</div></div>
+            <div class="overview-card"><div class="overview-card-label">Contacts</div><div class="overview-card-value">\${totalContacts}</div><div class="overview-card-sub">Mapped in this account</div></div>
+            <div class="overview-card"><div class="overview-card-label">Open issues</div><div class="overview-card-value">\${openIssues}</div><div class="overview-card-sub">Active in Pylon</div></div>
+            <div class="overview-card"><div class="overview-card-label">Opportunities</div><div class="overview-card-value">\${oppCount}</div><div class="overview-card-sub">In Salesforce</div></div>
+          </div>
+        \`;
+      }
+
+      function renderIssues() {
+        const container = document.querySelector("#issues-content");
+        if (!container) return;
+        if (!issues.length) {
+          container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">No issues yet for this account.</div>';
+          return;
+        }
+        container.innerHTML = issues.map((issue) => {
+          const requesterName = issue.requester?.name || "Unknown";
+          const requesterTitle = issue.requester?.title || "";
+          const ago = issue.createdAt ? daysAgoLabel(issue.createdAt) : "";
+          const state = (issue.state || "open").toLowerCase();
+          const stateLabel = state.replace(/_/g, " ").toUpperCase();
+          const assigneeInitials = initials(issue.assignee?.name || "—");
+          return \`<div class="issue-row">
+            <div class="issue-num">#\${escapeHtml(String(issue.number || ""))}</div>
+            <div>
+              <div class="issue-title">\${escapeHtml(issue.title || "Untitled")}</div>
+              <div class="issue-meta">Raised by \${escapeHtml(requesterName)}\${requesterTitle ? " · " + escapeHtml(requesterTitle) : ""}\${ago ? " · " + ago : ""}</div>
+            </div>
+            <div class="issue-state-pill \${state}">\${escapeHtml(stateLabel)}</div>
+            <div class="issue-assignee" title="\${escapeAttr(issue.assignee?.name || "Unassigned")}">\${assigneeInitials}</div>
+          </div>\`;
+        }).join("");
+      }
+
+      function renderContactsList() {
+        const container = document.querySelector("#contacts-content");
+        if (!container) return;
+        if (!people.length) {
+          container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">No contacts yet for this account.</div>';
+          return;
+        }
+        container.innerHTML = people.map((person) => \`<div class="contact-row" data-person-id="\${escapeAttr(person.id)}">
+          <div class="contact-row-photo">\${initials(person.name)}</div>
+          <div>
+            <div class="contact-row-name">\${escapeHtml(person.name)}</div>
+            <div class="contact-row-title">\${escapeHtml(person.title || "")}</div>
+          </div>
+          <div class="contact-row-email">\${escapeHtml(person.email || person.source || "")}</div>
+          <div class="issue-state-pill \${(person.relationship || "").toLowerCase().includes("blocker") ? "open" : "logged"}">\${escapeHtml((person.relationship || "—").split(" ")[0])}</div>
+        </div>\`).join("");
+        container.querySelectorAll(".contact-row").forEach((row) => {
+          row.addEventListener("click", () => openContactDetails(row.dataset.personId));
+        });
+      }
+
+      function daysAgoLabel(iso) {
+        try {
+          const d = new Date(iso);
+          const days = Math.max(0, Math.round((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24)));
+          if (days === 0) return "today";
+          if (days === 1) return "1 day ago";
+          return \`\${days} days ago\`;
+        } catch {
+          return "";
+        }
+      }
 
       function render() {
         renderContacts();
