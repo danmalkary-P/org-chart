@@ -5,6 +5,8 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
   const opportunitiesJson = JSON.stringify(context.opportunities || []).replace(/</g, "\\u003c");
   const accountMetricsJson = JSON.stringify(context.accountMetrics || {}).replace(/</g, "\\u003c");
   const issuesJson = JSON.stringify(context.issues || []).replace(/</g, "\\u003c");
+  const messagesJson = JSON.stringify(context.messages || []).replace(/</g, "\\u003c");
+  const departmentsJson = JSON.stringify((context.departments || []).map((d) => ({ ...d, type: "department" }))).replace(/</g, "\\u003c");
 
   return `<!doctype html>
 <html lang="en">
@@ -342,17 +344,198 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .overview-cards {
         display: grid;
         gap: 12px;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
       }
       .overview-card {
         background: #fff;
         border: 1px solid var(--line);
         border-radius: 10px;
-        padding: 14px 16px;
+        padding: 16px 18px;
       }
       .overview-card-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-      .overview-card-value { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; margin-top: 4px; }
-      .overview-card-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+      .overview-card-value { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin-top: 6px; }
+      .overview-card-value small { font-size: 14px; font-weight: 500; color: var(--muted); }
+      .overview-card-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+      .overview-card-sub.at-risk { color: #d03030; }
+
+      /* ============ Overview signal sections ============ */
+      .overview-signals {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr 1fr;
+        margin-top: 16px;
+      }
+      .signal-section {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px 22px;
+      }
+      .signal-section h2 { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+      .signal-item {
+        align-items: flex-start;
+        display: flex;
+        gap: 10px;
+        padding: 7px 0;
+      }
+      .signal-dot {
+        border-radius: 50%;
+        flex-shrink: 0;
+        height: 8px;
+        margin-top: 5px;
+        width: 8px;
+      }
+      .signal-dot.risk { background: #d03030; }
+      .signal-dot.upsell { background: #16a34a; }
+      .signal-label { font-size: 13px; font-weight: 600; }
+      .signal-detail { color: var(--muted); font-size: 13px; }
+
+      /* ============ Overview recent activity ============ */
+      .overview-activity {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        margin-top: 16px;
+        padding: 20px 22px;
+      }
+      .overview-activity h2 { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+      .activity-item {
+        align-items: flex-start;
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+      }
+      .activity-item + .activity-item { border-top: 1px solid var(--line); }
+      .activity-dot {
+        background: var(--line);
+        border-radius: 50%;
+        flex-shrink: 0;
+        height: 8px;
+        margin-top: 6px;
+        width: 8px;
+      }
+      .activity-text { font-size: 13px; font-weight: 500; line-height: 1.4; }
+      .activity-meta { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+      /* ============ Issue detail panel ============ */
+      .issue-detail-panel {
+        background: #fff;
+        border-left: 1px solid var(--line);
+        bottom: 0;
+        display: none;
+        flex-direction: column;
+        overflow-y: auto;
+        position: fixed;
+        right: 0;
+        top: 48px;
+        width: 380px;
+        z-index: 1000;
+        box-shadow: -4px 0 20px rgba(0,0,0,0.08);
+      }
+      .issue-detail-panel.open { display: flex; }
+      .issue-row.active { background: #f5f3ff; }
+      .issue-row:hover { background: #fafafb; }
+      .issue-row.active:hover { background: #f5f3ff; }
+      .issue-detail-head {
+        align-items: flex-start;
+        display: flex;
+        justify-content: space-between;
+        padding: 20px 22px 0;
+      }
+      .issue-detail-head .close-btn {
+        background: transparent;
+        border: 0;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+        padding: 4px;
+      }
+      .issue-detail-head .close-btn:hover { color: var(--text); }
+      .issue-detail-num { color: var(--muted); font-size: 13px; font-weight: 500; }
+      .issue-detail-title { font-size: 17px; font-weight: 700; line-height: 1.35; margin-top: 4px; }
+      .issue-detail-status-row {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 0 22px;
+      }
+      .issue-detail-raised { color: var(--muted); font-size: 12px; }
+
+      .issue-detail-section {
+        border-top: 1px solid var(--line);
+        margin-top: 16px;
+        padding: 16px 22px;
+      }
+      .issue-detail-section h3 {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        margin: 0 0 10px;
+        text-transform: uppercase;
+      }
+      .issue-detail-body { color: var(--text-2); font-size: 13px; line-height: 1.55; }
+      .issue-detail-props { display: grid; gap: 10px; }
+      .issue-prop-row {
+        align-items: center;
+        display: grid;
+        font-size: 13px;
+        gap: 12px;
+        grid-template-columns: 90px 1fr;
+      }
+      .issue-prop-label { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.03em; }
+      .issue-prop-value { color: var(--text); font-weight: 500; }
+      .issue-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+      .issue-tag {
+        background: #f3f4f6;
+        border-radius: 4px;
+        color: var(--text-2);
+        font-size: 12px;
+        padding: 2px 8px;
+      }
+
+      /* Issue conversation */
+      .issue-convo-list { display: grid; gap: 14px; }
+      .issue-convo-msg {
+        border-radius: 10px;
+        padding: 12px 14px;
+      }
+      .issue-convo-msg.external { background: #f7f8fa; }
+      .issue-convo-msg.internal { background: #fffbeb; border: 1px solid #fde68a; }
+      .issue-convo-author {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .issue-convo-avatar {
+        align-items: center;
+        background: var(--primary-soft);
+        border-radius: 50%;
+        color: var(--primary);
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        height: 24px;
+        justify-content: center;
+        width: 24px;
+      }
+      .issue-convo-name { font-size: 13px; font-weight: 600; }
+      .issue-convo-internal-badge {
+        background: #f59e0b;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 2px 6px;
+        text-transform: uppercase;
+      }
+      .issue-convo-time { color: var(--muted); font-size: 11px; margin-left: auto; }
+      .issue-convo-body { color: var(--text-2); font-size: 13px; line-height: 1.5; }
       .nav-section-label {
         color: var(--muted);
         font-size: 11px;
@@ -1002,6 +1185,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         gap: 10px;
         grid-template-columns: 32px minmax(0, 1fr);
         padding: 6px 8px;
+        position: relative;
         transition: background-color 120ms ease, opacity 160ms ease;
       }
       .contact-chip:hover { background: var(--primary-soft); }
@@ -1029,6 +1213,120 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         font-weight: 500;
         line-height: 1.3;
         overflow-wrap: anywhere;
+      }
+
+      /* ============ Department chips (sidebar) ============ */
+      .sidebar-section-label {
+        align-items: center;
+        color: var(--muted);
+        display: flex;
+        font-size: 11px;
+        font-weight: 600;
+        justify-content: space-between;
+        letter-spacing: 0.03em;
+        margin: 12px 8px 4px;
+        text-transform: uppercase;
+      }
+      .add-dept-btn {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0;
+        padding: 1px 6px;
+        text-transform: none;
+      }
+      .add-dept-btn:hover { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+      .dept-chip-actions { display: none; gap: 1px; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+      .contact-chip:hover .dept-chip-actions { display: flex; }
+      .dept-action-btn {
+        align-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: 3px;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        font-size: 13px;
+        height: 20px;
+        justify-content: center;
+        padding: 0 5px;
+      }
+      .dept-action-btn:hover { background: var(--line-soft); color: var(--text); }
+      .dept-chip {
+        align-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: var(--radius-md);
+        cursor: grab;
+        display: flex;
+        gap: 10px;
+        padding: 6px 8px;
+        transition: background-color 120ms ease, opacity 160ms ease;
+        width: 100%;
+      }
+      .dept-photo { background: #f3f4f6 !important; color: #6b7280 !important; }
+      .dept-chip:hover { background: var(--primary-soft); }
+      .dept-chip[aria-disabled="true"] { cursor: pointer; filter: grayscale(0.6); opacity: 0.5; }
+      .dept-icon {
+        align-items: center;
+        border-radius: var(--radius-sm);
+        display: flex;
+        flex-shrink: 0;
+        height: 32px;
+        justify-content: center;
+        width: 32px;
+      }
+      .dept-icon.blue   { background: #e0eaff; color: #3358d4; }
+      .dept-icon.green  { background: #dcfce7; color: #16a34a; }
+      .dept-icon.purple { background: #f3f0ff; color: #6d28d9; }
+      .dept-icon.orange { background: #fff7ed; color: #c2410c; }
+      .dept-icon.grey   { background: #f3f4f6; color: #4b5563; }
+      .dept-chip-name { color: var(--text); font-size: 13px; font-weight: 500; line-height: 1.3; }
+      .dept-chip-desc { color: var(--muted); font-size: 11px; margin-top: 1px; }
+
+      /* ============ Department card (tree) ============ */
+      .dept-card {
+        background: #fafafa;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        gap: 12px;
+        min-width: 200px;
+        padding: 12px 14px;
+        position: relative;
+        transition: box-shadow 140ms ease, border-color 140ms ease;
+        user-select: none;
+        width: 220px;
+      }
+      .dept-card:hover { border-color: #c4b5fd; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+      .dept-card.is-drop-target { border-color: var(--primary); background: var(--primary-soft); }
+      .dept-card-icon {
+        align-items: center;
+        border-radius: 8px;
+        display: flex;
+        flex-shrink: 0;
+        height: 36px;
+        justify-content: center;
+        width: 36px;
+      }
+      .dept-card-icon.blue   { background: #e0eaff; color: #3358d4; }
+      .dept-card-icon.green  { background: #dcfce7; color: #16a34a; }
+      .dept-card-icon.purple { background: #f3f0ff; color: #6d28d9; }
+      .dept-card-icon.orange { background: #fff7ed; color: #c2410c; }
+      .dept-card-icon.grey   { background: #f3f4f6; color: #4b5563; }
+      .dept-card-body { min-width: 0; }
+      .dept-card-name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+      .dept-card-desc { color: var(--muted); font-size: 11px; margin-top: 2px; }
+      .dept-card-count { color: var(--muted); font-size: 11px; margin-top: 4px; }
+      .dept-card .remove {
+        position: absolute;
+        right: 6px;
+        top: 6px;
       }
 
       /* ============ Notes panel ============ */
@@ -1825,7 +2123,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             <span class="linkedin">in</span>
             <div class="title-stack">
               <strong>${escapeHtml(analysis.accountName)}</strong>
-              <span>Org Chart Mapper</span>
+              <span id="topbar-subtitle">Org Chart Mapper</span>
             </div>
           </div>
           <div class="actions">
@@ -1870,7 +2168,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             <div id="overview-content"></div>
           </div>
 
-          <div data-view="issues" class="stage-view" hidden>
+          <div data-view="issues" class="stage-view" hidden style="position:relative;">
             <div class="stage-head">
               <div><h1>Issues</h1><div class="muted">Pylon issues raised by contacts at this account.</div></div>
               <div class="stage-actions">
@@ -1879,6 +2177,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
               </div>
             </div>
             <div id="issues-content" class="issues-list"></div>
+            <aside id="issue-detail-panel" class="issue-detail-panel"></aside>
           </div>
 
           <div data-view="contacts" class="stage-view" hidden>
@@ -1904,7 +2203,17 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
               <button type="button" class="secondary" id="cancel-new-contact">Cancel</button>
             </div>
           </div>
+          <div class="sidebar-section-label">People</div>
           <div id="people-list" class="contact-list"></div>
+          <div class="sidebar-section-label">Departments <button type="button" id="add-dept-btn" class="add-dept-btn">+ Add</button></div>
+          <div id="add-dept-form" class="add-contact-form">
+            <input id="new-dept-name" type="text" placeholder="Group name (e.g. Sales)" autocomplete="off">
+            <div class="add-contact-form-actions">
+              <button type="button" class="primary" id="save-new-dept">Add</button>
+              <button type="button" class="secondary" id="cancel-new-dept">Cancel</button>
+            </div>
+          </div>
+          <div id="dept-list" class="contact-list"></div>
         </div>
       </aside>
       <aside id="notes-panel" class="notes-panel" aria-label="Contact details and notes">
@@ -1977,6 +2286,9 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const opportunities = ${opportunitiesJson};
       const accountMetrics = ${accountMetricsJson};
       const issues = ${issuesJson};
+      const messages = ${messagesJson};
+      const departments = ${departmentsJson};
+      const DEPT_ICON_SVG = \`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.5"/><path d="M1 8h14" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 2"/></svg>\`;
       const opportunitiesById = new Map(opportunities.map((o) => [o.id, o]));
       const peopleById = new Map(people.map((person) => [person.id, person]));
 
@@ -2008,9 +2320,14 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         people.push(person);
         peopleById.set(person.id, person);
       });
+      departments.forEach((dept) => {
+        if (!dept?.id || peopleById.has(dept.id)) return;
+        people.push(dept);
+        peopleById.set(dept.id, dept);
+      });
       requestAnimationFrame(() => {
         const totalEl = document.querySelector("#total-count");
-        if (totalEl) totalEl.textContent = people.length;
+        if (totalEl) totalEl.textContent = people.filter((p) => p.type !== "department").length;
       });
 
       const contactDetailCache = new Map();
@@ -2332,6 +2649,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && notesPanel.classList.contains("open")) closeNotes();
       });
+      document.addEventListener("keydown", (event) => {
+        const panel = document.querySelector("#issue-detail-panel");
+        if (event.key === "Escape" && panel?.classList.contains("open")) closeIssueDetail();
+      });
       document.querySelector("#save-notes").addEventListener("click", () => {
         if (!state.activeNoteId) return;
         state.notesById[state.activeNoteId] = notesInput.value;
@@ -2368,6 +2689,27 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         if (e.key === "Enter") document.querySelector("#save-new-contact").click();
       });
 
+      const addDeptForm = document.querySelector("#add-dept-form");
+      document.querySelector("#add-dept-btn").addEventListener("click", () => {
+        addDeptForm.classList.toggle("open");
+        if (addDeptForm.classList.contains("open")) document.querySelector("#new-dept-name").focus();
+      });
+      document.querySelector("#cancel-new-dept").addEventListener("click", () => {
+        addDeptForm.classList.remove("open");
+        document.querySelector("#new-dept-name").value = "";
+      });
+      const saveNewDept = () => {
+        const name = document.querySelector("#new-dept-name").value.trim();
+        if (!name) { document.querySelector("#new-dept-name").focus(); return; }
+        addDepartment(name);
+        document.querySelector("#new-dept-name").value = "";
+        addDeptForm.classList.remove("open");
+      };
+      document.querySelector("#save-new-dept").addEventListener("click", saveNewDept);
+      document.querySelector("#new-dept-name").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") saveNewDept();
+      });
+
       orgTree.addEventListener("dragover", allowDrop);
       orgTree.addEventListener("drop", (event) => {
         if (event.target.closest(".profile-card")) return;
@@ -2378,16 +2720,36 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
 
       applySuggestedLayout();
       render();
+      autoFitTree();
       setupNavigation();
+
+      function autoFitTree() {
+        requestAnimationFrame(() => {
+          const panel = document.querySelector(".map-panel");
+          const tree = document.querySelector("#org-tree");
+          if (!panel || !tree) return;
+          const availWidth = panel.clientWidth - 40;
+          const naturalWidth = tree.scrollWidth;
+          if (naturalWidth > availWidth) {
+            const scale = Math.max(0.45, Math.floor((availWidth / naturalWidth) * 20) / 20);
+            setTweak("scale", scale);
+          }
+        });
+      }
+
+      const tabLabels = { "overview": "Overview", "issues": "Issues", "org-map": "Org Chart Mapper", "contacts": "Contacts" };
 
       function setupNavigation() {
         const navItems = document.querySelectorAll(".nav-item[data-nav]");
         const views = document.querySelectorAll(".stage-view[data-view]");
+        const topbarSubtitle = document.querySelector("#topbar-subtitle");
         navItems.forEach((item) => {
           item.addEventListener("click", () => {
             const target = item.dataset.nav;
             navItems.forEach((n) => n.classList.toggle("active", n === item));
             views.forEach((v) => { v.hidden = v.dataset.view !== target; });
+            if (topbarSubtitle) topbarSubtitle.textContent = tabLabels[target] || target;
+            closeIssueDetail();
             if (target === "overview") renderOverview();
             else if (target === "issues") renderIssues();
             else if (target === "contacts") renderContactsList();
@@ -2399,21 +2761,85 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         const container = document.querySelector("#overview-content");
         if (!container) return;
         const arr = accountMetrics.currentArr ? formatCurrency(accountMetrics.currentArr) : "—";
-        const health = accountMetrics.healthScore != null ? \`\${accountMetrics.healthScore}/10\` : "—";
-        const renewal = accountMetrics.renewalDate ? formatDate(accountMetrics.renewalDate) : "—";
-        const totalContacts = people.length;
-        const openIssues = issues.filter((i) => !["closed", "resolved"].includes(i.state || "")).length;
-        const oppCount = opportunities.length;
+        const health = accountMetrics.healthScore != null ? \`\${accountMetrics.healthScore}\` : "—";
+        const healthSub = accountMetrics.healthTrend
+          ? \`At risk · \${accountMetrics.healthTrend}\`
+          : (accountMetrics.sentiment === "at_risk" ? "At risk" : "On track");
+        const renewal = accountMetrics.renewalDate ? \`Renewal \${formatDate(accountMetrics.renewalDate)}\` : "—";
+        const seats = accountMetrics.seatCount != null ? String(accountMetrics.seatCount) : "—";
+        const seatTier = accountMetrics.seatTier || "";
+        const lifecycle = accountMetrics.lifecycle || "—";
+        const lifecycleSub = accountMetrics.lifecycleSub || "";
+        const riskSignals = accountMetrics.riskSignals || [];
+        const upsellSignals = accountMetrics.upsellSignals || [];
+        const recentActivity = accountMetrics.recentActivity || [];
+
+        const riskItems = riskSignals.map((s) => {
+          const label = typeof s === "string" ? s : s.label;
+          const detail = typeof s === "string" ? "" : (s.detail || "");
+          return \`<div class="signal-item"><span class="signal-dot risk"></span><div><span class="signal-label">\${escapeHtml(label)}</span>\${detail ? \`<span class="signal-detail"> · \${escapeHtml(detail)}</span>\` : ""}</div></div>\`;
+        }).join("");
+
+        const upsellItems = upsellSignals.map((s) => {
+          const label = typeof s === "string" ? s : s.label;
+          const detail = typeof s === "string" ? "" : (s.detail || "");
+          return \`<div class="signal-item"><span class="signal-dot upsell"></span><div><span class="signal-label">\${escapeHtml(label)}</span>\${detail ? \`<span class="signal-detail"> · \${escapeHtml(detail)}</span>\` : ""}</div></div>\`;
+        }).join("");
+
+        const activityItems = recentActivity.map((a) => {
+          const when = a.when ? timeAgoShort(a.when) : "";
+          const parts = [when, a.type, a.status].filter(Boolean);
+          return \`<div class="activity-item"><span class="activity-dot"></span><div><div class="activity-text">\${escapeHtml(a.text)}</div><div class="activity-meta">\${escapeHtml(parts.join(" · "))}</div></div></div>\`;
+        }).join("");
+
         container.innerHTML = \`
           <div class="overview-cards">
-            <div class="overview-card"><div class="overview-card-label">ARR</div><div class="overview-card-value">\${arr}</div><div class="overview-card-sub">Current annual recurring</div></div>
-            <div class="overview-card"><div class="overview-card-label">Health</div><div class="overview-card-value">\${health}</div><div class="overview-card-sub">Pylon score</div></div>
-            <div class="overview-card"><div class="overview-card-label">Renewal</div><div class="overview-card-value" style="font-size:16px">\${renewal}</div><div class="overview-card-sub">Next renewal date</div></div>
-            <div class="overview-card"><div class="overview-card-label">Contacts</div><div class="overview-card-value">\${totalContacts}</div><div class="overview-card-sub">Mapped in this account</div></div>
-            <div class="overview-card"><div class="overview-card-label">Open issues</div><div class="overview-card-value">\${openIssues}</div><div class="overview-card-sub">Active in Pylon</div></div>
-            <div class="overview-card"><div class="overview-card-label">Opportunities</div><div class="overview-card-value">\${oppCount}</div><div class="overview-card-sub">In Salesforce</div></div>
+            <div class="overview-card">
+              <div class="overview-card-label">Current ARR</div>
+              <div class="overview-card-value">\${escapeHtml(arr)}</div>
+              <div class="overview-card-sub">\${escapeHtml(renewal)}</div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-card-label">Health</div>
+              <div class="overview-card-value">\${escapeHtml(health)}<small>/10</small></div>
+              <div class="overview-card-sub at-risk">\${escapeHtml(healthSub)}</div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-card-label">Seats</div>
+              <div class="overview-card-value">\${escapeHtml(seats)}</div>
+              <div class="overview-card-sub">\${escapeHtml(seatTier)}</div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-card-label">Lifecycle</div>
+              <div class="overview-card-value" style="font-size:20px;font-weight:700">\${escapeHtml(lifecycle)}</div>
+              <div class="overview-card-sub">\${escapeHtml(lifecycleSub)}</div>
+            </div>
           </div>
+          \${(riskItems || upsellItems) ? \`
+          <div class="overview-signals">
+            \${riskItems ? \`<div class="signal-section"><h2>Risk signals</h2>\${riskItems}</div>\` : ""}
+            \${upsellItems ? \`<div class="signal-section"><h2>Upsell signals</h2>\${upsellItems}</div>\` : ""}
+          </div>\` : ""}
+          \${activityItems ? \`
+          <div class="overview-activity">
+            <h2>Recent activity</h2>
+            \${activityItems}
+          </div>\` : ""}
         \`;
+      }
+
+      function timeAgoShort(iso) {
+        try {
+          const d = new Date(iso);
+          const days = Math.round((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+          if (days === 0) return "Today";
+          if (days === 1) return "1 day ago";
+          if (days < 7) return \`\${days} days ago\`;
+          if (days < 14) return "1 week ago";
+          const months = Math.round(days / 30);
+          if (months < 2) return "1 month ago";
+          return \`\${months} months ago\`;
+        } catch { return ""; }
       }
 
       function renderIssues() {
@@ -2427,10 +2853,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           const requesterName = issue.requester?.name || "Unknown";
           const requesterTitle = issue.requester?.title || "";
           const ago = issue.createdAt ? daysAgoLabel(issue.createdAt) : "";
-          const state = (issue.state || "open").toLowerCase();
-          const stateLabel = state.replace(/_/g, " ").toUpperCase();
+          const state = (issue.state || "open").toLowerCase().replace(/_/g, "-");
+          const stateLabel = state.replace(/-/g, " ").toUpperCase();
           const assigneeInitials = initials(issue.assignee?.name || "—");
-          return \`<div class="issue-row">
+          return \`<div class="issue-row" data-issue-id="\${escapeAttr(issue.id)}" style="cursor:pointer;">
             <div class="issue-num">#\${escapeHtml(String(issue.number || ""))}</div>
             <div>
               <div class="issue-title">\${escapeHtml(issue.title || "Untitled")}</div>
@@ -2440,6 +2866,74 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             <div class="issue-assignee" title="\${escapeAttr(issue.assignee?.name || "Unassigned")}">\${assigneeInitials}</div>
           </div>\`;
         }).join("");
+        container.querySelectorAll(".issue-row").forEach((row) => {
+          row.addEventListener("click", () => openIssueDetail(row.dataset.issueId));
+        });
+      }
+
+      function openIssueDetail(id) {
+        const issue = issues.find((i) => i.id === id);
+        const panel = document.querySelector("#issue-detail-panel");
+        if (!issue || !panel) return;
+        document.querySelectorAll(".issue-row").forEach((r) => r.classList.toggle("active", r.dataset.issueId === id));
+        const state = (issue.state || "open").toLowerCase().replace(/_/g, "-");
+        const stateLabel = state.replace(/-/g, " ").toUpperCase();
+        const requesterName = issue.requester?.name || "Unknown";
+        const requesterTitle = issue.requester?.title || "";
+        const ago = issue.createdAt ? daysAgoLabel(issue.createdAt) : "";
+        const raisedBy = [requesterName, requesterTitle, ago].filter(Boolean).join(" · ");
+        const issueMessages = messages.filter((m) => m.issueId === issue.id);
+        const priority = issue.priority ? issue.priority.charAt(0).toUpperCase() + issue.priority.slice(1) : "—";
+        const severity = issue.severity ? issue.severity.charAt(0).toUpperCase() + issue.severity.slice(1) : "—";
+        const tags = (issue.tags || []).map((t) => \`<span class="issue-tag">\${escapeHtml(t)}</span>\`).join("");
+
+        const convoHtml = issueMessages.map((msg) => {
+          const authorName = msg.author?.name || "Unknown";
+          const msgAgo = msg.createdAt ? daysAgoLabel(msg.createdAt) : "";
+          return \`<div class="issue-convo-msg \${msg.isInternal ? "internal" : "external"}">
+            <div class="issue-convo-author">
+              <span class="issue-convo-avatar">\${initials(authorName)}</span>
+              <span class="issue-convo-name">\${escapeHtml(authorName)}</span>
+              \${msg.isInternal ? '<span class="issue-convo-internal-badge">Internal</span>' : ""}
+              <span class="issue-convo-time">\${escapeHtml(msgAgo)}</span>
+            </div>
+            <div class="issue-convo-body">\${escapeHtml(msg.bodyText || "")}</div>
+          </div>\`;
+        }).join("");
+
+        panel.innerHTML = \`
+          <div class="issue-detail-head">
+            <div>
+              <div class="issue-detail-num">#\${escapeHtml(String(issue.number || ""))}</div>
+              <div class="issue-detail-title">\${escapeHtml(issue.title || "Untitled")}</div>
+            </div>
+            <button type="button" class="close-btn" id="close-issue-detail">×</button>
+          </div>
+          <div class="issue-detail-status-row">
+            <span class="issue-state-pill \${state}">\${escapeHtml(stateLabel)}</span>
+            <span class="issue-detail-raised">Raised by \${escapeHtml(raisedBy)}</span>
+          </div>
+          \${issue.bodyText ? \`<div class="issue-detail-section"><h3>Description</h3><div class="issue-detail-body">\${escapeHtml(issue.bodyText)}</div></div>\` : ""}
+          <div class="issue-detail-section">
+            <h3>Properties</h3>
+            <div class="issue-detail-props">
+              \${issue.assignee ? \`<div class="issue-prop-row"><span class="issue-prop-label">Owner</span><span class="issue-prop-value">\${escapeHtml(issue.assignee.name)}</span></div>\` : ""}
+              <div class="issue-prop-row"><span class="issue-prop-label">Priority</span><span class="issue-prop-value">\${escapeHtml(priority)}</span></div>
+              <div class="issue-prop-row"><span class="issue-prop-label">Severity</span><span class="issue-prop-value">\${escapeHtml(severity)}</span></div>
+              <div class="issue-prop-row"><span class="issue-prop-label">Reporter</span><span class="issue-prop-value">\${escapeHtml(requesterName)}</span></div>
+              \${tags ? \`<div class="issue-prop-row"><span class="issue-prop-label">Tags</span><div class="issue-tags">\${tags}</div></div>\` : ""}
+            </div>
+          </div>
+          \${issueMessages.length ? \`<div class="issue-detail-section"><h3>Conversation</h3><div class="issue-convo-list">\${convoHtml}</div></div>\` : ""}
+        \`;
+        panel.classList.add("open");
+        panel.querySelector("#close-issue-detail").addEventListener("click", closeIssueDetail);
+      }
+
+      function closeIssueDetail() {
+        const panel = document.querySelector("#issue-detail-panel");
+        if (panel) panel.classList.remove("open");
+        document.querySelectorAll(".issue-row").forEach((r) => r.classList.remove("active"));
       }
 
       function renderContactsList() {
@@ -2482,14 +2976,65 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
 
       function renderContacts() {
         const placed = placedIds();
-        placedCount.textContent = placed.size;
-        peopleList.innerHTML = people.map((person) => renderContactChip(person, placed.has(person.id))).join("");
+        const contactPeople = people.filter((p) => p.type !== "department");
+        const deptPeople = people.filter((p) => p.type === "department");
+        const placedDepts = deptPeople.filter((d) => placed.has(d.id)).length;
+        placedCount.textContent = placed.size - placedDepts;
+
+        peopleList.innerHTML = contactPeople.map((person) => renderContactChip(person, placed.has(person.id))).join("");
         peopleList.querySelectorAll(".contact-chip").forEach((chip) => {
           chip.addEventListener("click", () => openContactDetails(chip.dataset.personId));
           if (chip.getAttribute("aria-disabled") === "true") return;
           chip.addEventListener("dragstart", (event) => startDrag(event, chip.dataset.personId));
           chip.addEventListener("dragend", endDrag);
         });
+
+        const deptList = document.querySelector("#dept-list");
+        if (deptList) {
+          deptList.innerHTML = deptPeople.map((dept) => renderDeptChip(dept, placed.has(dept.id))).join("");
+          deptList.querySelectorAll(".contact-chip").forEach((chip) => {
+            if (chip.getAttribute("aria-disabled") === "true") return;
+            chip.addEventListener("dragstart", (event) => startDrag(event, chip.dataset.personId));
+            chip.addEventListener("dragend", endDrag);
+          });
+          deptList.querySelectorAll(".dept-rename-btn").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              const id = btn.dataset.personId;
+              const dept = peopleById.get(id);
+              if (!dept) return;
+              const chip = btn.closest(".contact-chip");
+              const nameEl = chip.querySelector(".contact-name");
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = dept.name;
+              input.style.cssText = "border:1px solid var(--primary);border-radius:3px;font:inherit;font-size:13px;font-weight:500;padding:1px 4px;width:100%;outline:none;background:#fff;";
+              nameEl.replaceWith(input);
+              input.focus();
+              input.select();
+              let saved = false;
+              const finish = (save) => {
+                if (saved) return;
+                saved = true;
+                if (save && input.value.trim()) renameDepartment(id, input.value);
+                else render();
+              };
+              input.addEventListener("keydown", (ev) => {
+                if (ev.key === "Enter") { ev.preventDefault(); finish(true); }
+                if (ev.key === "Escape") finish(false);
+              });
+              input.addEventListener("blur", () => finish(true));
+            });
+          });
+          deptList.querySelectorAll(".dept-delete-btn").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              deleteDepartment(btn.dataset.personId);
+            });
+          });
+        }
       }
 
       function renderTree() {
@@ -2499,10 +3044,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         }
 
         orgTree.innerHTML = state.roots.map((id) => renderTreeNode(id)).join("");
-        orgTree.querySelectorAll(".profile-card").forEach((card) => {
+        orgTree.querySelectorAll(".profile-card, .dept-card").forEach((card) => {
           card.addEventListener("click", (event) => {
             if (event.target.closest("button")) return;
-            openContactDetails(card.dataset.personId);
+            if (!card.classList.contains("dept-card")) openContactDetails(card.dataset.personId);
           });
           card.addEventListener("dragstart", (event) => startDrag(event, card.dataset.personId));
           card.addEventListener("dragend", endDrag);
@@ -2555,6 +3100,57 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         });
       }
 
+      function renderDeptChip(dept, isPlaced) {
+        return \`<article class="contact-chip" draggable="\${!isPlaced}" data-person-id="\${escapeAttr(dept.id)}" aria-disabled="\${isPlaced}">
+          <div class="contact-photo dept-photo">\${DEPT_ICON_SVG}</div>
+          <div>
+            <div class="contact-name">\${escapeHtml(dept.name)}</div>
+            \${isPlaced ? \`<div class="contact-meta" style="font-size:11px">In map</div>\` : ""}
+          </div>
+          <div class="dept-chip-actions">
+            <button type="button" class="dept-action-btn dept-rename-btn" data-person-id="\${escapeAttr(dept.id)}" title="Rename" draggable="false">✎</button>
+            <button type="button" class="dept-action-btn dept-delete-btn" data-person-id="\${escapeAttr(dept.id)}" title="Delete" draggable="false">×</button>
+          </div>
+        </article>\`;
+      }
+
+      function addDepartment(name) {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const slug = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+        const id = "dept_" + slug + "_" + Date.now();
+        const dept = { id, name: trimmed, type: "department" };
+        people.push(dept);
+        peopleById.set(id, dept);
+        render();
+      }
+
+      function renameDepartment(id, newName) {
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+        const dept = peopleById.get(id);
+        if (!dept) return;
+        dept.name = trimmed;
+        render();
+      }
+
+      function deleteDepartment(id) {
+        const children = state.childrenById[id] || [];
+        const parentId = Object.keys(state.childrenById).find((pid) => (state.childrenById[pid] || []).includes(id));
+        if (parentId) {
+          state.childrenById[parentId] = state.childrenById[parentId].filter((c) => c !== id);
+          children.forEach((childId) => state.childrenById[parentId].push(childId));
+        } else {
+          children.forEach((childId) => { if (!state.roots.includes(childId)) state.roots.push(childId); });
+        }
+        state.roots = state.roots.filter((r) => r !== id);
+        delete state.childrenById[id];
+        const idx = people.findIndex((p) => p.id === id);
+        if (idx !== -1) people.splice(idx, 1);
+        peopleById.delete(id);
+        render();
+      }
+
       function renderContactChip(person, isPlaced) {
         return \`<article class="contact-chip" draggable="\${!isPlaced}" data-person-id="\${escapeAttr(person.id)}" aria-disabled="\${isPlaced}">
           <div class="contact-photo">\${initials(person.name)}</div>
@@ -2573,6 +3169,20 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         const person = peopleById.get(id);
         if (!person) return "";
         const children = state.childrenById[id] || [];
+
+        if (person.type === "department") {
+          return \`<div class="tree-node \${children.length ? "has-children" : ""}">
+            <article class="profile-card" draggable="true" data-person-id="\${escapeAttr(id)}" data-in-tree="1">
+              <button type="button" class="remove ghost" data-person-id="\${escapeAttr(id)}" aria-label="Remove \${escapeAttr(person.name)}">×</button>
+              <div class="profile-card-photo dept-photo">\${DEPT_ICON_SVG}</div>
+              <div class="profile-card-info">
+                <div class="profile-card-name">\${escapeHtml(person.name)}</div>
+              </div>
+            </article>
+            \${children.length ? \`<div class="children">\${children.map((childId) => renderTreeNode(childId)).join("")}</div>\` : ""}
+          </div>\`;
+        }
+
         const linkedinUrl = state.linkedinById[id] || "";
         const sentiment = person.aiFields?.sentiment || "";
         const sentimentTitle = sentiment ? \`AI sentiment: \${sentiment}\${person.aiFields?.sentimentReason ? " — " + person.aiFields.sentimentReason : ""}\` : "";
@@ -2581,7 +3191,6 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         const displayTitle = state.customTitles[id] || person.title;
         const displayName = state.customNames[id] || person.name;
         const reportsCount = children.length;
-        const department = person.department || extractDepartment(displayTitle);
         const role = extractRole(displayTitle);
         return \`<div class="tree-node \${children.length ? "has-children" : ""}">
         <article class="profile-card \${isKey ? "is-key" : ""}" draggable="true" data-person-id="\${escapeAttr(id)}" data-in-tree="1">
@@ -2604,20 +3213,6 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
                 </div>
                 <div class="profile-stat-value">\${reportsCount}</div>
                 <div class="profile-stat-label">Reports</div>
-              </div>
-              <div class="profile-stat" title="\${escapeAttr(department || "Department unknown")}">
-                <div class="profile-stat-icon green">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <rect x="3" y="2" width="10" height="13" rx="1" stroke="currentColor" stroke-width="1.5"/>
-                    <rect x="5.5" y="4.5" width="1.5" height="1.5" fill="currentColor"/>
-                    <rect x="9" y="4.5" width="1.5" height="1.5" fill="currentColor"/>
-                    <rect x="5.5" y="7.5" width="1.5" height="1.5" fill="currentColor"/>
-                    <rect x="9" y="7.5" width="1.5" height="1.5" fill="currentColor"/>
-                    <rect x="6.5" y="11" width="3" height="4" fill="currentColor"/>
-                  </svg>
-                </div>
-                <div class="profile-stat-value">\${escapeHtml(department || "—")}</div>
-                <div class="profile-stat-label">Department</div>
               </div>
               <div class="profile-stat" title="\${escapeAttr(role || "Role")}">
                 <div class="profile-stat-icon blue">
@@ -2971,18 +3566,47 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       function applySuggestedLayout() {
         state.roots = [];
         state.childrenById = {};
-        for (const id of suggestedRoots) {
-          if (peopleById.has(id)) state.roots.push(id);
+        const contactPeople = people.filter((p) => p.type !== "department");
+        if (!contactPeople.length) return;
+
+        const LEVEL_RANK = { "Executive": 0, "VP / Head": 1, "Director / Manager": 2, "Working Team": 3 };
+        const sorted = [...contactPeople].sort((a, b) => (LEVEL_RANK[a.level] ?? 4) - (LEVEL_RANK[b.level] ?? 4));
+
+        const topPerson =
+          sorted.find((p) => /\b(ceo|chief executive|founder|owner|president)\b/i.test(p.title || "")) ||
+          sorted[0];
+        if (!topPerson) return;
+        state.roots.push(topPerson.id);
+
+        const placed = [topPerson];
+        for (const person of sorted) {
+          if (person.id === topPerson.id) continue;
+          const rank = LEVEL_RANK[person.level] ?? 4;
+          const seniors = placed.filter((p) => (LEVEL_RANK[p.level] ?? 4) < rank);
+          const parent = domainMatch(person, seniors) || topPerson;
+          placeUnder(person.id, parent.id, { renderAfter: false });
+          placed.push(person);
         }
-        const remaining = people.filter((person) => !state.roots.includes(person.id));
-        const economicBuyer = people.find((person) => person.buyingRole === "Economic buyer") || peopleById.get(state.roots[0]);
-        for (const person of remaining) {
-          if (economicBuyer && person.id !== economicBuyer.id) {
-            placeUnder(person.id, economicBuyer.id, { renderAfter: false });
-          } else if (!state.roots.includes(person.id)) {
-            state.roots.push(person.id);
+      }
+
+      function domainMatch(person, candidates) {
+        const personTitle = (person.title || "").toLowerCase();
+        const DOMAINS = [
+          ["it", "security", "infra", "cto", "ciso", "engineer"],
+          ["revenue", "revops", "finance", "cfo", "coo"],
+          ["sales", "bdr", "sdr", "account executive"],
+          ["product", "design", "ux", "cpo"],
+          ["legal", "compliance", "procurement"],
+          ["ops", "operations"],
+        ];
+        const hits = (title) => (words) => words.some((w) => title.includes(w));
+        for (const words of DOMAINS) {
+          if (hits(personTitle)(words)) {
+            const match = candidates.find((c) => hits((c.title || "").toLowerCase())(words));
+            if (match) return match;
           }
         }
+        return null;
       }
 
       function placeAtRoot(id) {
@@ -3239,8 +3863,8 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         "scale": 1,
         "cardWidth": 168,
         "photoHeight": 138,
-        "rowGap": 28,
-        "colGap": 48,
+        "rowGap": 22,
+        "colGap": 24,
         "fontScale": 1,
         "showStats": true,
         "showPhoto": false,

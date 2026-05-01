@@ -22,7 +22,65 @@ const mockContexts = {
         nextMeeting: "2026-05-04T17:00:00Z"
       }
     },
+    departments: [
+      { id: "dept_sales", name: "Sales", description: "AEs, SDRs, Sales management", color: "blue" },
+      { id: "dept_support", name: "Support", description: "Customer support & success", color: "green" },
+      { id: "dept_engineering", name: "Engineering", description: "Product & engineering teams", color: "purple" },
+      { id: "dept_revops", name: "Revenue Ops", description: "RevOps & analytics", color: "orange" },
+      { id: "dept_it", name: "IT", description: "IT infrastructure & security", color: "grey" }
+    ],
     contacts: [
+      {
+        id: "con_marty",
+        name: "Marty Reynolds",
+        email: "marty.reynolds@acmerobotics.com",
+        role: "CEO",
+        accountId: "acme-risk",
+        customFields: {
+          buying_role: "Executive sponsor",
+          sentiment: "Aware, supportive",
+          ai_sentiment: "Positive",
+          low_sentiment: false,
+          ai_summary: "Executive sponsor for the enterprise rollout. Delegates technical decisions to Advith.",
+          engagement_trend: "Stable",
+          department: "Executive",
+          lifecycle_stage: "Renewal"
+        }
+      },
+      {
+        id: "con_advith",
+        name: "Advith Kurpad",
+        email: "advith.kurpad@acmerobotics.com",
+        role: "CTO",
+        accountId: "acme-risk",
+        customFields: {
+          buying_role: "Technical decision maker",
+          sentiment: "Cautious on security",
+          ai_sentiment: "Neutral",
+          low_sentiment: false,
+          ai_summary: "Owns technical evaluation. Concerned about SSO and data export security.",
+          engagement_trend: "Stable",
+          department: "Engineering",
+          lifecycle_stage: "Technical validation"
+        }
+      },
+      {
+        id: "con_jordan",
+        name: "Jordan Avery",
+        email: "jordan.avery@acmerobotics.com",
+        role: "VP Operations",
+        accountId: "acme-risk",
+        customFields: {
+          buying_role: "Operations champion",
+          sentiment: "Enthusiastic",
+          ai_sentiment: "Positive",
+          low_sentiment: false,
+          ai_summary: "Driving the 120-seat operations expansion. Key champion for field rollout.",
+          engagement_trend: "Increasing",
+          department: "Operations",
+          lifecycle_stage: "Expansion evaluation"
+        }
+      },
       {
         id: "con_mia",
         name: "Mia Chen",
@@ -93,71 +151,102 @@ const mockContexts = {
       {
         id: "iss_sso_redirect",
         number: 4182,
-        title: "SAML redirect loops for Acme admins",
-        state: "waiting_on_you",
+        title: "SSO redirect fails on ACS URL",
+        state: "open",
         priority: "high",
+        severity: "high",
         tags: ["sso", "enterprise", "renewal-risk"],
         assignee: {
-          id: "usr_priya",
-          name: "Priya Rao",
-          email: "priya@yourcompany.com"
+          id: "usr_diana",
+          name: "Diana Lee",
+          email: "diana@yourcompany.com"
         },
         requester: {
           id: "con_omar",
           name: "Omar Silva",
-          email: "omar.silva@acmerobotics.com"
+          email: "omar.silva@acmerobotics.com",
+          title: "Director of IT"
         },
-        createdAt: "2026-04-27T15:14:00Z",
+        createdAt: "2026-04-17T15:14:00Z",
         updatedAt: "2026-05-01T16:02:00Z",
         latestMessageActivityAt: "2026-05-01T16:02:00Z",
         url: "https://app.usepylon.com/issues/4182",
-        bodyText: "Acme admins get stuck in a redirect loop after SAML login."
+        bodyText: "Acme admins are hitting a redirect loop when authenticating via SAML. The ACS URL appears to be misconfigured after the IdP migration last month. This is blocking the admin pilot rollout."
       },
       {
         id: "iss_export_schema",
         number: 4169,
-        title: "Need export schema before rollout",
-        state: "waiting_on_customer",
+        title: "Export schema for Snowflake — column-level control",
+        state: "triaged",
         priority: "medium",
-        tags: ["data-export", "security-review"],
+        severity: "medium",
+        tags: ["exports", "snowflake", "feature-request"],
         assignee: {
-          id: "usr_sam",
-          name: "Sam Patel",
-          email: "sam@yourcompany.com"
+          id: "usr_diana",
+          name: "Diana Lee",
+          email: "diana@yourcompany.com"
         },
         requester: {
           id: "con_mia",
           name: "Mia Chen",
-          email: "mia.chen@acmerobotics.com"
+          email: "mia.chen@acmerobotics.com",
+          title: "VP Revenue Operations"
         },
-        createdAt: "2026-04-24T19:00:00Z",
-        updatedAt: "2026-04-30T20:22:00Z",
-        latestMessageActivityAt: "2026-04-30T20:22:00Z",
+        createdAt: "2026-04-22T19:00:00Z",
+        updatedAt: "2026-04-28T20:22:00Z",
+        latestMessageActivityAt: "2026-04-28T20:22:00Z",
         url: "https://app.usepylon.com/issues/4169",
-        bodyText: "Mia asked for the export schema before committing to a larger rollout."
+        bodyText: "RevOps wants to choose which columns sync into the customer.events table in Snowflake. Today the export is all-or-nothing, which is forcing them to mask PII downstream in dbt."
       },
       {
-        id: "iss_seats",
-        number: 4120,
-        title: "Question about adding 120 operations seats",
-        state: "closed",
+        id: "iss_pricing_guardrails",
+        number: 4151,
+        title: "Renewal pricing guardrails in admin",
+        state: "logged",
         priority: "low",
-        tags: ["expansion", "seats"],
+        severity: "low",
+        tags: ["admin", "pricing", "renewal"],
         assignee: {
-          id: "usr_dana",
-          name: "Dana Lee",
-          email: "dana@yourcompany.com"
+          id: "usr_diana",
+          name: "Diana Lee",
+          email: "diana@yourcompany.com"
         },
         requester: {
           id: "con_mia",
           name: "Mia Chen",
-          email: "mia.chen@acmerobotics.com"
+          email: "mia.chen@acmerobotics.com",
+          title: "VP Revenue Operations"
         },
-        createdAt: "2026-04-16T18:00:00Z",
-        updatedAt: "2026-04-17T11:12:00Z",
-        latestMessageActivityAt: "2026-04-17T11:12:00Z",
-        url: "https://app.usepylon.com/issues/4120",
-        bodyText: "Mia asked whether the operations team could be added under a single rollout plan."
+        createdAt: "2026-04-13T14:00:00Z",
+        updatedAt: "2026-04-14T10:30:00Z",
+        latestMessageActivityAt: "2026-04-14T10:30:00Z",
+        url: "https://app.usepylon.com/issues/4151",
+        bodyText: "Mia wants admin-level controls to set pricing guardrails that prevent reps from offering discounts beyond approved thresholds during renewal negotiations."
+      },
+      {
+        id: "iss_webhook_url",
+        number: 4127,
+        title: "Webhook retry policy exposes plaintext URL in logs",
+        state: "resolved",
+        priority: "medium",
+        severity: "medium",
+        tags: ["webhooks", "security", "logging"],
+        assignee: {
+          id: "usr_diana",
+          name: "Diana Lee",
+          email: "diana@yourcompany.com"
+        },
+        requester: {
+          id: "con_omar",
+          name: "Omar Silva",
+          email: "omar.silva@acmerobotics.com",
+          title: "Director of IT"
+        },
+        createdAt: "2026-04-09T11:00:00Z",
+        updatedAt: "2026-04-12T16:45:00Z",
+        latestMessageActivityAt: "2026-04-12T16:45:00Z",
+        url: "https://app.usepylon.com/issues/4127",
+        bodyText: "When a webhook delivery fails and retries, the full destination URL (including any embedded secrets) is written to the audit log in plaintext. Omar flagged this during their security review."
       }
     ],
     messages: [
@@ -177,8 +266,8 @@ const mockContexts = {
         issueId: "iss_sso_redirect",
         id: "msg_2",
         author: {
-          name: "Priya Rao",
-          email: "priya@yourcompany.com",
+          name: "Diana Lee",
+          email: "diana@yourcompany.com",
           type: "user"
         },
         bodyText: "Internal note: likely misconfigured ACS URL. I can validate with Omar before Monday's call.",
@@ -193,9 +282,33 @@ const mockContexts = {
           email: "mia.chen@acmerobotics.com",
           type: "contact"
         },
-        bodyText: "If the schema is stable, we can include the ops team in the next phase.",
-        createdAt: "2026-04-30T20:22:00Z",
+        bodyText: "Could we get a column-picker on the Snowflake destination? Right now we're masking 6 fields in dbt and it's getting brittle.",
+        createdAt: "2026-04-22T19:00:00Z",
         isInternal: false
+      },
+      {
+        issueId: "iss_export_schema",
+        id: "msg_4",
+        author: {
+          name: "Diana Lee",
+          email: "diana@yourcompany.com",
+          type: "user"
+        },
+        bodyText: "Makes sense — flagged this with the integrations PM. Putting it on the roadmap call this week.",
+        createdAt: "2026-04-23T14:30:00Z",
+        isInternal: false
+      },
+      {
+        issueId: "iss_export_schema",
+        id: "msg_5",
+        author: {
+          name: "Diana Lee",
+          email: "diana@yourcompany.com",
+          type: "user"
+        },
+        bodyText: "PM confirmed for Q3. Will let Mia know once it's officially scoped.",
+        createdAt: "2026-04-28T20:22:00Z",
+        isInternal: true
       }
     ],
     signals: {
@@ -298,15 +411,29 @@ const mockContexts = {
     ],
     accountMetrics: {
       currentArr: 148000,
-      renewalDate: "2026-06-30",
+      renewalDate: "2026-06-29",
       healthScore: 6.2,
+      healthTrend: "trending down",
       sentiment: "at_risk",
       lifecycle: "Middle",
+      lifecycleSub: "3rd year customer",
       seatCount: 45,
-      seatTier: "Enterprise",
+      seatTier: "Enterprise tier",
       products: ["Enterprise Seat", "AI Agents"],
-      upsellSignals: ["Operations seat expansion (120 seats)", "AI Assistants interest"],
-      riskSignals: ["SSO blocker open (issue #4182)", "Export schema pending for expansion decision"]
+      upsellSignals: [
+        { label: "Operations seat expansion", detail: "120 seats mentioned by Jordan Avery" },
+        { label: "AI Assistants interest", detail: "Mia Chen asked for case studies" }
+      ],
+      riskSignals: [
+        { label: "SSO blocker open", detail: "Issue #4182, 14 days unresolved" },
+        { label: "Export schema pending", detail: "Issue #4169, blocks Snowflake rollout" },
+        { label: "Frustration trending up", detail: "Omar Silva (Director of IT)" }
+      ],
+      recentActivity: [
+        { text: "Mia Chen replied to renewal pricing thread", when: "2026-04-29T10:00:00Z", type: "Email", status: "Engaged" },
+        { text: "Quarterly business review · Mia, Dana, Omar", when: "2026-04-24T14:00:00Z", type: "45 min", status: "Recap shared" },
+        { text: "Omar Silva opened SSO blocker (#4182)", when: "2026-04-17T15:14:00Z", type: null, status: "Engineering triaged" }
+      ]
     }
   },
   "quiet-bank": {
