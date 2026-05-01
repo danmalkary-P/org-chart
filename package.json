@@ -1,0 +1,15 @@
+{
+  "name": "pylon-sales-heat",
+  "version": "0.1.0",
+  "description": "Pylon sidebar widgets for sales follow-up drafting and warm intro mapping.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "DEMO_MODE=mock node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
