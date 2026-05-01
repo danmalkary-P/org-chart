@@ -126,12 +126,12 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       /* ============ Shell ============ */
       .app-shell {
         display: grid;
-        grid-template-columns: 44px 220px minmax(520px, 1fr) 280px 0px;
+        grid-template-columns: 188px minmax(520px, 1fr) 280px 0px;
         min-height: 100vh;
         transition: grid-template-columns 200ms ease;
       }
       .app-shell.notes-open {
-        grid-template-columns: 44px 220px minmax(340px, 1fr) 0px 380px;
+        grid-template-columns: 188px minmax(340px, 1fr) 0px 380px;
       }
       .app-shell.notes-open .contacts-panel {
         overflow: hidden;
@@ -182,7 +182,6 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       /* ============ Account nav (second column) ============ */
       .account-nav {
         background: var(--surface);
-        border-right: 1px solid var(--line);
         display: flex;
         flex-direction: column;
         overflow-y: auto;
@@ -1890,16 +1889,16 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
 
       @media (max-width: 1120px) {
         .app-shell {
-          grid-template-columns: 48px minmax(0, 1fr) 320px 0px;
+          grid-template-columns: minmax(0, 1fr) 320px 0px;
         }
         .app-shell.notes-open {
-          grid-template-columns: 48px minmax(0, 1fr) 0px 380px;
+          grid-template-columns: minmax(0, 1fr) 0px 380px;
         }
         .account-nav { display: none; }
       }
       @media (max-width: 860px) {
         .app-shell { grid-template-columns: 1fr; }
-        .rail, .contacts-panel { display: none; }
+        .contacts-panel { display: none; }
         .stage { padding: 18px; }
         .insights { grid-template-columns: 1fr; }
       }
@@ -2053,45 +2052,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
   </head>
   <body>
     <div class="app-shell">
-      <aside class="rail" aria-label="Pylon-style app rail">
-        <div class="rail-dot active" title="Org Chart">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <rect x="5" y="1" width="6" height="4" rx="1" fill="currentColor"/>
-            <rect x="1" y="11" width="5" height="4" rx="1" fill="currentColor"/>
-            <rect x="10" y="11" width="5" height="4" rx="1" fill="currentColor"/>
-            <line x1="8" y1="5" x2="8" y2="9" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="3.5" y1="9" x2="12.5" y2="9" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="3.5" y1="9" x2="3.5" y2="11" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="12.5" y1="9" x2="12.5" y2="11" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
-        </div>
-        <div class="rail-dot" title="Issues">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="8" y1="5" x2="8" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <circle cx="8" cy="11" r="0.75" fill="currentColor"/>
-          </svg>
-        </div>
-        <div class="rail-dot" title="Settings">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M8 1.5v1.25M8 13.25V14.5M1.5 8h1.25M13.25 8H14.5M3.4 3.4l.88.88M11.72 11.72l.88.88M3.4 12.6l.88-.88M11.72 4.28l.88-.88" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="rail-dot" title="Contacts">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="8" cy="5.5" r="2.75" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M2.5 13.5c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="rail-dot" title="Activity">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <polyline points="1.5,10 4.5,6 7,9 10,4 14.5,8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      </aside>
       <aside class="account-nav" aria-label="Account navigation">
-        <div class="back">← Accounts</div>
         <div class="account-summary-card" id="account-summary-card">
           <div class="account-summary-name">${escapeHtml(analysis.accountName)}</div>
           <div class="account-summary-metrics" id="account-summary-metrics">
