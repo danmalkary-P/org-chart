@@ -28,7 +28,52 @@ export function renderPreviewPage({ title, payload }) {
       header {
         border-bottom: 1px solid var(--border);
         background: var(--panel);
-        padding: 20px 24px;
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .header-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+      .back-link {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .back-link:hover { color: var(--text); }
+      .breadcrumb-sep { color: var(--border); font-size: 15px; }
+      .breadcrumb-current {
+        font-weight: 700;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #fff7df;
+        color: #8a6100;
+        border: 1px solid #f0d78a;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        white-space: nowrap;
+      }
+      .header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
       }
       main {
         max-width: 760px;
@@ -124,10 +169,13 @@ export function renderPreviewPage({ title, payload }) {
   </head>
   <body>
     <header>
-      <h1>${escapeHtml(title)}</h1>
-      <p class="hint">Sales preview of the sidebar experience.</p>
-      <div class="actions">
-        <a class="button" href="/">Home</a>
+      <div class="header-nav">
+        <a class="back-link" href="/">← Home</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">${escapeHtml(title)}</span>
+      </div>
+      <span class="header-badge">Preview · Sidebar experience</span>
+      <div class="header-actions">
         <a class="button" href="/compose">Input builder</a>
       </div>
     </header>

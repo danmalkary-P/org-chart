@@ -204,6 +204,8 @@ export function renderOrgMapPreview({ analysis }) {
       .metric strong {
         display: block;
         font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
         margin-top: 2px;
       }
       .map-panel {
@@ -423,8 +425,7 @@ export function renderOrgMapPreview({ analysis }) {
         transition: transform 160ms ease;
       }
       .tree-node.has-children > .children::before {
-        background: currentColor;
-        color: #6b233f;
+        background: var(--line-strong);
         content: "";
         height: 2px;
         left: 56px;
@@ -433,8 +434,7 @@ export function renderOrgMapPreview({ analysis }) {
         top: 0;
       }
       .tree-node.has-children > .children::after {
-        background: currentColor;
-        color: #6b233f;
+        background: var(--line-strong);
         content: "";
         height: 30px;
         left: 50%;
@@ -443,8 +443,7 @@ export function renderOrgMapPreview({ analysis }) {
         width: 2px;
       }
       .tree-node.has-children > .children > .tree-node::before {
-        background: currentColor;
-        color: #6b233f;
+        background: var(--line-strong);
         content: "";
         height: 22px;
         left: 50%;
@@ -599,6 +598,19 @@ export function renderOrgMapPreview({ analysis }) {
         resize: vertical;
         width: 100%;
       }
+      #close-notes {
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        display: flex;
+        font-size: 18px;
+        height: 30px;
+        justify-content: center;
+        padding: 0;
+        width: 30px;
+        flex-shrink: 0;
+      }
+      #close-notes:hover { background: #f2f3f5; color: var(--text); }
       .notes-head {
         align-items: start;
         display: flex;
@@ -693,11 +705,41 @@ export function renderOrgMapPreview({ analysis }) {
   <body>
     <div class="app-shell">
       <aside class="rail" aria-label="Pylon-style app rail">
-        <div class="rail-dot active">O</div>
-        <div class="rail-dot">+</div>
-        <div class="rail-dot">S</div>
-        <div class="rail-dot">C</div>
-        <div class="rail-dot">A</div>
+        <div class="rail-dot active" title="Org Chart">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="5" y="1" width="6" height="4" rx="1" fill="currentColor"/>
+            <rect x="1" y="11" width="5" height="4" rx="1" fill="currentColor"/>
+            <rect x="10" y="11" width="5" height="4" rx="1" fill="currentColor"/>
+            <line x1="8" y1="5" x2="8" y2="9" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="3.5" y1="9" x2="12.5" y2="9" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="3.5" y1="9" x2="3.5" y2="11" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="12.5" y1="9" x2="12.5" y2="11" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="rail-dot" title="Issues">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="8" y1="5" x2="8" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="11" r="0.75" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="rail-dot" title="Settings">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M8 1.5v1.25M8 13.25V14.5M1.5 8h1.25M13.25 8H14.5M3.4 3.4l.88.88M11.72 11.72l.88.88M3.4 12.6l.88-.88M11.72 4.28l.88-.88" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="rail-dot" title="Contacts">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="5.5" r="2.75" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M2.5 13.5c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="rail-dot" title="Activity">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <polyline points="1.5,10 4.5,6 7,9 10,4 14.5,8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </aside>
       <aside class="account-nav" aria-label="Account navigation">
         <div class="back">← Accounts</div>
@@ -776,7 +818,7 @@ export function renderOrgMapPreview({ analysis }) {
           <h2 id="notes-name">Contact details</h2>
           <div id="notes-title" class="muted"></div>
         </div>
-        <button type="button" class="ghost" id="close-notes">Close</button>
+        <button type="button" class="ghost" id="close-notes" title="Close (Esc)">×</button>
       </div>
       <div id="detail-status" class="detail-status">Click a contact to load Pylon and CRM detail.</div>
       <div id="detail-content" class="detail-content"></div>
@@ -822,6 +864,9 @@ export function renderOrgMapPreview({ analysis }) {
         render();
       });
       document.querySelector("#close-notes").addEventListener("click", closeNotes);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && notesPanel.classList.contains("open")) closeNotes();
+      });
       document.querySelector("#save-notes").addEventListener("click", () => {
         if (!state.activeNoteId) return;
         state.notesById[state.activeNoteId] = notesInput.value;
@@ -942,7 +987,7 @@ export function renderOrgMapPreview({ analysis }) {
             <div class="profile-note">\${escapeHtml(note || "Click the title chip to add stakeholder notes.")}</div>
             <div class="owner">Internal owner: \${escapeHtml(person.owner)}</div>
           </div>
-          <button type="button" class="remove ghost" data-person-id="\${escapeAttr(id)}" aria-label="Remove \${escapeAttr(person.name)}">x</button>
+          <button type="button" class="remove ghost" data-person-id="\${escapeAttr(id)}" aria-label="Remove \${escapeAttr(person.name)}">×</button>
         </article>
         \${children.length ? \`<div class="children">\${children.map((childId) => renderTreeNode(childId)).join("")}</div>\` : ""}
         </div>\`;
@@ -1258,7 +1303,7 @@ function suggestedRootIds(nodes) {
 }
 
 function yesNo(value) {
-  return value ? "Mapped" : "Missing";
+  return value ? "✓ Mapped" : "✗ Missing";
 }
 
 function escapeHtml(value) {
