@@ -10,118 +10,204 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Org Chart Mapper</title>
+    <title>Org Chart Mapper · Pylon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #f7f7f8;
+        /* Pylon Nexus tokens */
+        --bg: #ffffff;
+        --bg-rail: #f9f5e3;            /* cream rail (matches screenshot) */
         --surface: #ffffff;
-        --subtle: #fafafa;
-        --text: #24262b;
-        --muted: #69707d;
-        --faint: #9aa3b3;
-        --line: #e3e5ea;
-        --line-strong: #cfd5df;
-        --purple: #5b2df5;
-        --purple-soft: #f1edff;
-        --green: #147a3f;
-        --yellow: #8a6100;
-        --red: #b42318;
-        --blue: #0b57d0;
+        --surface-soft: #f7f7f8;       /* slate-25 */
+        --subtle: #f7f7f8;
+
+        --text: #1b1b1b;               /* type-primary */
+        --text-2: #414348;             /* slate-700 */
+        --muted: #5d6373;              /* slate-500 */
+        --faint: #99a1b3;              /* slate-300 */
+
+        --line: #e7e8eb;               /* border-default */
+        --line-soft: #ecedee;          /* border-subtle */
+        --line-strong: #d2d5da;        /* border-strong */
+
+        --primary: #5532ed;            /* primary-base — Pylon indigo */
+        --primary-hover: #4338ca;      /* primary-plus-1 */
+        --primary-soft: #eef2ff;       /* primary-minus-6 — hover row */
+        --primary-soft-2: #e0e7ff;     /* primary-minus-5 — selected row */
+        --primary-faint: #f3f1ff;
+
+        --accent-violet: #9747ff;
+        --accent-violet-soft: #f5f3ff;
+
+        --positive: #047857;
+        --positive-soft: #d1fae5;
+        --positive-faint: #ecfdf5;
+        --notice: #b45309;
+        --notice-soft: #fde68a;
+        --notice-faint: #fffbeb;
+        --negative: #b91c1c;
+        --negative-soft: #fee2e2;
+        --negative-faint: #fef2f2;
+
+        --radius-sm: 4px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --radius-xl: 12px;
+
+        --shadow-card: 0 6px 24px 0 rgba(0,0,0,0.08);
+        --shadow-pop: 0 12px 32px -6px rgba(15,20,30,0.14), 0 4px 10px -2px rgba(15,20,30,0.06);
+        --ring-focus: 0 0 0 3px rgba(85, 50, 237, 0.22);
+
+        /* Backwards-compat aliases (kept so existing class CSS works) */
+        --purple: var(--primary);
+        --purple-soft: var(--primary-soft);
+        --green: var(--positive);
+        --yellow: var(--notice);
+        --red: var(--negative);
+        --blue: #1d4ed8;
       }
+
       * { box-sizing: border-box; }
+      html, body {
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--text);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
         line-height: 1.45;
       }
+
+      /* ============ Buttons ============ */
       button, .button {
         border: 0;
-        border-radius: 7px;
+        border-radius: var(--radius-md);
         cursor: pointer;
         font: inherit;
-        font-weight: 650;
+        font-weight: 500;
         line-height: 1.2;
-        padding: 8px 11px;
+        padding: 7px 11px;
+        transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
       }
       .button {
         display: inline-flex;
+        align-items: center;
+        gap: 6px;
         text-decoration: none;
       }
       .primary {
-        background: #222;
-        color: white;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 500;
       }
+      .primary:hover { background: var(--primary-hover); }
       .secondary {
-        background: #f2f3f5;
-        color: #30333a;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--line);
+        font-weight: 500;
       }
+      .secondary:hover { background: var(--surface-soft); }
       .ghost {
         background: transparent;
         color: var(--muted);
       }
+      .ghost:hover { background: var(--surface-soft); color: var(--text); }
+      :focus-visible { outline: none; box-shadow: var(--ring-focus); }
+
+      /* ============ Shell ============ */
       .app-shell {
         display: grid;
-        grid-template-columns: 54px 270px minmax(560px, 1fr) 350px 0px;
+        grid-template-columns: 44px 220px minmax(520px, 1fr) 280px 0px;
         min-height: 100vh;
         transition: grid-template-columns 200ms ease;
       }
       .app-shell.notes-open {
-        grid-template-columns: 54px 270px minmax(360px, 1fr) 0px 430px;
+        grid-template-columns: 44px 220px minmax(340px, 1fr) 0px 380px;
       }
       .app-shell.notes-open .contacts-panel {
         overflow: hidden;
         padding: 0;
       }
+
+      /* ============ Pylon-style cream rail ============ */
       .rail {
         align-items: center;
-        background: #fbfbfc;
-        border-right: 1px solid var(--line);
+        background: var(--bg-rail);
+        border-right: 1px solid #ece4c2;
         display: flex;
         flex-direction: column;
-        gap: 14px;
-        padding: 18px 10px;
+        gap: 4px;
+        padding: 10px 6px;
+      }
+      .rail::before {
+        /* Pylon logo dot */
+        align-items: center;
+        background: var(--primary);
+        border-radius: 7px;
+        color: #fff;
+        content: "";
+        background-image: linear-gradient(135deg, #5532ed 0%, #9747ff 100%);
+        display: block;
+        height: 28px;
+        margin-bottom: 6px;
+        width: 28px;
+        position: relative;
       }
       .rail-dot {
         align-items: center;
-        border: 1px solid transparent;
-        border-radius: 8px;
-        color: #555b66;
+        border-radius: 6px;
+        color: #6b6649;
+        cursor: pointer;
         display: flex;
-        font-size: 18px;
-        height: 32px;
+        height: 30px;
         justify-content: center;
+        transition: background 120ms ease, color 120ms ease;
         width: 32px;
       }
+      .rail-dot:hover { background: rgba(85, 50, 237, 0.06); color: var(--primary); }
       .rail-dot.active {
-        background: #e8e8e8;
-        color: #222;
+        background: var(--primary-soft-2);
+        color: var(--primary);
       }
+
+      /* ============ Account nav (second column) ============ */
       .account-nav {
-        background: #f4f4f6;
+        background: var(--surface);
         border-right: 1px solid var(--line);
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        padding: 20px 16px;
+        padding: 14px 10px;
       }
       .back {
-        color: #667085;
-        font-size: 14px;
-        font-weight: 650;
-        margin-bottom: 16px;
+        align-items: center;
+        color: var(--primary);
+        display: flex;
+        font-size: 13px;
+        font-weight: 500;
+        gap: 6px;
+        margin-bottom: 12px;
+        padding: 4px 8px;
       }
       .account-summary-card {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 9px;
-        margin-bottom: 16px;
-        padding: 12px;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        margin-bottom: 14px;
+        padding: 4px 8px 12px;
+        border-bottom: 1px solid var(--line-soft);
       }
       .account-summary-name {
+        color: var(--text);
         font-size: 13px;
-        font-weight: 750;
+        font-weight: 600;
+        letter-spacing: -0.005em;
         margin-bottom: 8px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -134,64 +220,82 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         margin-bottom: 6px;
       }
       .summary-metric {
-        background: #f4f4f6;
-        border-radius: 5px;
+        background: var(--surface-soft);
+        border-radius: var(--radius-sm);
+        color: var(--muted);
         font-size: 11px;
-        padding: 3px 7px;
+        line-height: 1.3;
+        padding: 4px 7px;
       }
-      .summary-metric strong { display: block; font-size: 13px; font-weight: 800; line-height: 1.2; }
+      .summary-metric strong {
+        color: var(--text);
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
       .summary-renewal {
         color: var(--muted);
         font-size: 11px;
+        padding: 0 1px;
       }
       .nav-list {
         display: grid;
-        gap: 2px;
+        gap: 1px;
         margin-bottom: 14px;
       }
       .nav-item {
-        border-radius: 7px;
-        color: #25272d;
+        align-items: center;
+        border-radius: var(--radius-md);
+        color: var(--text-2);
+        cursor: pointer;
+        display: flex;
         font-size: 13px;
-        padding: 7px 10px;
+        font-weight: 400;
+        gap: 8px;
+        padding: 6px 8px;
       }
+      .nav-item:hover { background: var(--primary-soft); color: var(--text); }
       .nav-item.active {
-        color: var(--text);
-        font-weight: 700;
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-weight: 500;
       }
       .nav-section-label {
-        color: var(--faint);
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        margin-bottom: 8px;
-        padding: 0 2px;
-        text-transform: uppercase;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0;
+        margin: 6px 0 6px;
+        padding: 0 8px;
+        text-transform: none;
       }
-      .opp-list { display: grid; gap: 7px; }
+
+      /* ============ Opportunity cards (left rail) ============ */
+      .opp-list { display: grid; gap: 4px; padding: 0 4px; }
       .opp-card {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 8px;
+        background: transparent;
+        border: 0;
+        border-radius: var(--radius-md);
         cursor: pointer;
-        padding: 10px 11px;
+        padding: 8px 8px;
         text-align: left;
-        transition: border-color 120ms ease, box-shadow 120ms ease;
+        transition: background-color 120ms ease;
         width: 100%;
       }
-      .opp-card:hover {
-        border-color: #888;
-        box-shadow: 0 0 0 2px #eee;
-      }
+      .opp-card:hover { background: var(--primary-soft); }
       .opp-card.active {
-        border-color: #555;
-        box-shadow: 0 0 0 2px #eee;
+        background: var(--primary-soft-2);
       }
       .opp-card-name {
+        color: var(--text);
         font-size: 12px;
-        font-weight: 700;
-        line-height: 1.3;
-        margin-bottom: 3px;
+        font-weight: 500;
+        line-height: 1.35;
+        margin-bottom: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .opp-card-meta {
         color: var(--muted);
@@ -202,25 +306,27 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         border-radius: 999px;
         display: inline-flex;
         font-size: 10px;
-        font-weight: 700;
-        padding: 2px 7px;
+        font-weight: 500;
+        padding: 1px 7px;
       }
-      .opp-health.at_risk { background: #e8e8e8; color: #333; }
-      .opp-health.conditional { background: #e8e8e8; color: #333; }
-      .opp-health.neutral { background: #eef2f6; color: #475467; }
+      .opp-health.at_risk { background: var(--negative-soft); color: var(--negative); }
+      .opp-health.conditional { background: var(--notice-soft); color: var(--notice); }
+      .opp-health.neutral { background: var(--positive-soft); color: var(--positive); }
+
+      /* ============ Opportunity slide-over ============ */
       .opp-panel {
         background: var(--surface);
         border-right: 1px solid var(--line);
         bottom: 0;
-        box-shadow: 4px 0 20px rgba(20, 24, 32, 0.08);
-        left: 54px;
+        box-shadow: var(--shadow-pop);
+        left: 48px;
         overflow-y: auto;
-        padding: 20px 18px;
+        padding: 18px 18px;
         position: fixed;
         top: 0;
         transform: translateX(-110%);
-        transition: transform 180ms ease;
-        width: 300px;
+        transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        width: 320px;
         z-index: 25;
       }
       .opp-panel.open { transform: translateX(0); }
@@ -229,14 +335,14 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         display: flex;
         gap: 8px;
         justify-content: space-between;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
       }
-      .opp-panel-head h2 { font-size: 15px; }
+      .opp-panel-head h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.005em; }
       .opp-panel-close {
         align-items: center;
         background: transparent;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         color: var(--muted);
         cursor: pointer;
         display: flex;
@@ -247,79 +353,92 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         padding: 0;
         width: 28px;
       }
-      .opp-panel-close:hover { background: #f2f3f5; color: var(--text); }
+      .opp-panel-close:hover { background: var(--surface-soft); color: var(--text); }
       .opp-type-badge {
-        border-radius: 999px;
+        background: var(--primary-soft);
+        border-radius: var(--radius-sm);
+        color: var(--primary);
         display: inline-flex;
         font-size: 10px;
-        font-weight: 700;
-        padding: 3px 8px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
         margin-bottom: 12px;
+        padding: 3px 8px;
+        text-transform: uppercase;
       }
-      .opp-type-renewal, .opp-type-expansion, .opp-type-new_business { background: #ebebeb; color: #333; }
+      .opp-type-renewal { background: var(--primary-soft); color: var(--primary); }
+      .opp-type-expansion { background: var(--positive-soft); color: var(--positive); }
+      .opp-type-new_business { background: var(--accent-violet-soft); color: var(--accent-violet); }
       .opp-field-list { display: grid; gap: 8px; margin-bottom: 14px; }
-      .opp-field-row { display: grid; gap: 4px; grid-template-columns: 80px minmax(0,1fr); }
-      .opp-field-label { color: var(--muted); font-size: 11px; padding-top: 1px; }
-      .opp-field-value { font-size: 12px; overflow-wrap: anywhere; }
+      .opp-field-row { display: grid; gap: 4px; grid-template-columns: 88px minmax(0,1fr); }
+      .opp-field-label { color: var(--muted); font-size: 12px; padding-top: 1px; }
+      .opp-field-value { color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
       .opp-text-block {
-        background: #f9f9fb;
+        background: var(--surface-soft);
         border: 1px solid var(--line);
-        border-radius: 7px;
+        border-radius: var(--radius-md);
+        color: var(--text-2);
         font-size: 12px;
         line-height: 1.55;
-        padding: 10px;
+        padding: 10px 12px;
       }
       .opp-text-label {
         color: var(--muted);
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.05em;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0;
         margin-bottom: 5px;
-        text-transform: uppercase;
+        text-transform: none;
       }
       .view-profile-btn {
-        color: #333;
+        color: var(--primary);
         font-size: 12px;
-        font-weight: 650;
+        font-weight: 500;
         text-decoration: none;
       }
       .view-profile-btn:hover { text-decoration: underline; }
+
+      /* ============ Workspace + topbar ============ */
       .workspace {
         background: var(--surface);
         min-width: 0;
       }
       .topbar {
         align-items: center;
+        background: var(--surface);
         border-bottom: 1px solid var(--line);
         display: flex;
         gap: 12px;
         justify-content: space-between;
-        min-height: 61px;
-        padding: 14px 24px;
+        min-height: 48px;
+        padding: 8px 20px;
       }
       .account-title {
         align-items: center;
         display: flex;
-        gap: 10px;
+        gap: 8px;
         min-width: 0;
       }
       .linkedin {
         align-items: center;
-        background: #0a66c2;
-        border-radius: 3px;
-        color: white;
+        background: linear-gradient(135deg, #5532ed 0%, #9747ff 100%);
+        border-radius: var(--radius-sm);
+        color: #fff;
         display: inline-flex;
-        font-size: 13px;
-        font-weight: 850;
-        height: 20px;
+        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 600;
+        height: 22px;
         justify-content: center;
-        width: 20px;
+        letter-spacing: -0.01em;
+        width: 22px;
       }
-      .title-stack {
-        min-width: 0;
-      }
+      .title-stack { min-width: 0; }
       .title-stack strong {
+        color: var(--text);
         display: block;
+        font-size: 13px;
+        font-weight: 500;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -329,8 +448,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         display: block;
         font-size: 12px;
       }
+
+      /* ============ Stage ============ */
       .stage {
-        padding: 24px 32px 34px;
+        padding: 16px 22px 28px;
       }
       .stage-head {
         align-items: start;
@@ -339,41 +460,89 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         justify-content: space-between;
         margin-bottom: 18px;
       }
-      h1, h2 {
-        margin: 0;
-      }
+      h1, h2 { margin: 0; }
       h1 {
-        font-size: 25px;
-        letter-spacing: 0;
+        color: var(--text);
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 28px;
       }
       h2 {
-        font-size: 15px;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
       }
-      .muted {
-        color: var(--muted);
-      }
+      .muted { color: var(--muted); font-size: 13px; }
       .stage-actions, .actions {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
       }
+
+      /* ============ Map panel ============ */
       .map-panel {
-        background: #fafafa;
+        background: var(--surface-soft);
         border: 1px solid var(--line);
-        border-radius: 9px;
-        min-height: 560px;
+        border-radius: var(--radius-xl);
+        cursor: grab;
+        min-height: 540px;
         overflow: auto;
-        padding: 16px;
+        padding: 18px;
+        position: relative;
+      }
+      .map-panel.panning,
+      .map-panel.panning * { cursor: grabbing !important; }
+      .map-panel.panning .profile-card { pointer-events: none; }
+      .zoom-controls {
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(15, 20, 30, 0.04);
+        bottom: 14px;
+        display: inline-flex;
+        gap: 0;
+        padding: 2px;
+        position: sticky;
+        right: 14px;
+        z-index: 8;
+        float: right;
+        margin-top: -32px;
+        margin-bottom: -32px;
+        margin-right: 0;
+      }
+      .zoom-btn {
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        color: var(--text-2);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        height: 28px;
+        line-height: 1;
+        min-width: 28px;
+        padding: 0 6px;
+        transition: background-color 120ms ease;
+      }
+      .zoom-btn:hover { background: var(--surface-soft); color: var(--text); }
+      .zoom-level {
+        color: var(--muted);
+        font-feature-settings: "tnum" 1;
+        font-size: 11px;
+        min-width: 44px;
       }
       .profile-card.drop-above::before,
       .profile-card.drop-below::after {
         align-items: center;
-        background: rgba(91, 45, 245, 0.18);
-        border: 2px solid var(--purple);
-        color: var(--purple);
+        background: rgba(85, 50, 237, 0.16);
+        border: 2px solid var(--primary);
+        color: var(--primary);
         display: flex;
         font-size: 22px;
-        font-weight: 900;
+        font-weight: 700;
         height: 50%;
         justify-content: center;
         left: -2px;
@@ -384,34 +553,40 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         z-index: 5;
       }
       .profile-card.drop-above::before {
-        border-bottom: 2px dashed var(--purple);
+        border-bottom: 2px dashed var(--primary);
         border-radius: 12px 12px 0 0;
         content: "▲";
         top: -2px;
       }
       .profile-card.drop-below::after {
         border-radius: 0 0 12px 12px;
-        border-top: 2px dashed var(--purple);
+        border-top: 2px dashed var(--primary);
         bottom: -2px;
         content: "▼";
       }
       .tree {
         align-items: flex-start;
         display: flex;
-        gap: 76px;
+        gap: var(--tw-col-gap, 48px);
         justify-content: center;
-        min-width: 720px;
-        padding: 34px 18px 42px;
+        min-width: 600px;
+        padding: 24px 18px 36px;
+        transform-origin: top center;
+        transition: transform 140ms ease;
       }
       .empty-state {
-        background: #fbfbfc;
-        border: 1px solid var(--line);
-        border-radius: 9px;
+        background: var(--surface);
+        border: 1px dashed var(--line-strong);
+        border-radius: var(--radius-lg);
         color: var(--muted);
-        padding: 28px;
+        font-size: 13px;
+        padding: 32px 24px;
         text-align: center;
       }
+
+      /* ============ Profile cards ============ */
       .profile-card {
+        --card-photo-h: var(--tw-photo-h, 138px);
         background: transparent;
         cursor: grab;
         display: block;
@@ -419,14 +594,12 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         position: relative;
         text-align: initial;
         transition: opacity 140ms ease, transform 140ms ease;
-        width: 200px;
+        width: var(--tw-card-w, 168px);
         will-change: transform;
       }
-      .profile-card:hover {
-        transform: translateY(-2px);
-      }
+      .profile-card:hover { transform: translateY(-2px); }
       .profile-card.active .profile-card-photo {
-        outline: 3px solid var(--purple-soft);
+        outline: 3px solid var(--primary-soft);
         outline-offset: 0;
       }
       .profile-card.dragging {
@@ -436,36 +609,36 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
       .profile-card-photo {
         align-items: center;
-        background: linear-gradient(135deg, #f1edff 0%, #e3f7eb 100%);
-        border: 4px solid #fff;
-        border-bottom: 0;
-        border-radius: 18px 18px 6px 6px;
-        box-shadow: 0 4px 12px rgba(15, 20, 30, 0.06);
-        color: #475467;
+        background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+        border-radius: 999px 999px 8px 8px;
+        box-shadow: 0 4px 14px rgba(15, 20, 30, 0.06);
+        color: var(--primary);
         display: flex;
-        font-size: 38px;
-        font-weight: 850;
-        height: 150px;
+        font-size: 28px;
+        font-weight: 600;
+        height: var(--card-photo-h);
         justify-content: center;
         letter-spacing: -0.02em;
         position: relative;
         width: 100%;
       }
       .profile-card-info {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 6px 18px rgba(15, 20, 30, 0.07);
-        margin: -8px 8px 0;
-        padding: 12px 12px 10px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-card);
+        margin: -10px 0 0;
+        padding: 9px 10px 7px;
         position: relative;
         z-index: 2;
       }
       .profile-card-name {
+        color: var(--text);
         cursor: text;
-        font-size: 14px;
-        font-weight: 800;
-        letter-spacing: -0.01em;
-        line-height: 1.2;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        line-height: 1.25;
         margin: 0 0 2px;
         overflow: hidden;
         text-align: center;
@@ -475,14 +648,14 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .profile-card-title {
         background: transparent;
         border: 1px dashed transparent;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         color: var(--muted);
         cursor: text;
         display: block;
         font: inherit;
-        font-size: 11.5px;
+        font-size: 11px;
         line-height: 1.3;
-        margin: 0 auto 11px;
+        margin: 0 auto 9px;
         max-width: 100%;
         overflow: hidden;
         padding: 1px 6px;
@@ -491,52 +664,50 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         white-space: nowrap;
       }
       .profile-card-title:hover {
-        background: #f7f7f9;
+        background: var(--surface-soft);
         border-color: var(--line);
       }
       .title-chip-input {
         background: #fff;
-        border: 1px solid #888;
-        border-radius: 6px;
-        color: #111;
+        border: 1px solid var(--primary);
+        border-radius: var(--radius-sm);
+        color: var(--text);
         font: inherit;
-        font-size: 11.5px;
+        font-size: 11px;
         outline: none;
         padding: 1px 6px;
         text-align: center;
         width: 100%;
       }
       .profile-card-stats {
-        border-top: 1px solid #eef0f3;
+        border-top: 1px solid var(--line-soft);
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
-        padding-top: 9px;
+        padding-top: 8px;
       }
       .profile-stat {
         align-items: center;
-        border-right: 1px solid #eef0f3;
+        border-right: 1px solid var(--line-soft);
         display: flex;
         flex-direction: column;
         gap: 3px;
         min-width: 0;
         padding: 0 4px;
       }
-      .profile-stat:last-child {
-        border-right: 0;
-      }
+      .profile-stat:last-child { border-right: 0; }
       .profile-stat-icon {
         align-items: center;
         display: flex;
-        height: 18px;
+        height: 16px;
         justify-content: center;
       }
-      .profile-stat-icon.purple { color: var(--purple); }
-      .profile-stat-icon.green { color: var(--green); }
-      .profile-stat-icon.blue { color: var(--blue); }
+      .profile-stat-icon.purple { color: var(--primary); }
+      .profile-stat-icon.green { color: var(--positive); }
+      .profile-stat-icon.blue { color: #1d4ed8; }
       .profile-stat-value {
         color: var(--text);
-        font-size: 12px;
-        font-weight: 700;
+        font-size: 11px;
+        font-weight: 600;
         line-height: 1.1;
         max-width: 100%;
         overflow: hidden;
@@ -547,14 +718,14 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
       .profile-stat-label {
         color: var(--muted);
-        font-size: 9.5px;
-        font-weight: 500;
-        letter-spacing: 0.02em;
+        font-size: 10px;
+        font-weight: 400;
+        letter-spacing: 0;
       }
       .star-marker {
         align-items: center;
-        background: #f4d83f;
-        border: 2px solid #354047;
+        background: #f5b800;
+        border: 2px solid #fff;
         clip-path: polygon(50% 0, 61% 34%, 98% 35%, 68% 56%, 79% 91%, 50% 70%, 21% 91%, 32% 56%, 2% 35%, 39% 34%);
         color: transparent;
         display: none;
@@ -565,20 +736,19 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         width: 22px;
         z-index: 4;
       }
-      .profile-card.is-key .star-marker {
-        display: block;
-      }
+      .profile-card.is-key .star-marker { display: block; }
       .profile-name, .profile-meta, .badges, .profile-note, .owner { display: none; }
+
       .remove {
         align-items: center;
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.96);
         border: 1px solid var(--line);
         border-radius: 999px;
-        box-shadow: 0 3px 8px rgba(20, 24, 32, 0.08);
+        box-shadow: 0 3px 8px rgba(15, 20, 30, 0.08);
         color: var(--muted);
         display: flex;
         font-size: 13px;
-        height: 24px;
+        height: 22px;
         justify-content: center;
         opacity: 0;
         padding: 0;
@@ -586,22 +756,20 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         right: 8px;
         top: 8px;
         transition: opacity 120ms ease;
-        width: 24px;
+        width: 22px;
         z-index: 5;
       }
-      .profile-card:hover .remove, .profile-card:focus-within .remove {
-        opacity: 1;
-      }
+      .profile-card:hover .remove,
+      .profile-card:focus-within .remove { opacity: 1; }
+
+      /* ============ Tree connectors ============ */
       .children {
         align-items: flex-start;
-        border-left: 0;
         display: flex;
-        gap: 52px;
-        grid-column: auto;
+        gap: var(--tw-col-gap, 28px);
         justify-content: center;
-        margin: 24px 0 0;
-        padding-left: 0;
-        padding-top: 20px;
+        margin: var(--tw-row-gap, 22px) 0 0;
+        padding-top: 18px;
         position: relative;
       }
       .tree-node {
@@ -611,42 +779,30 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         position: relative;
         transition: transform 160ms ease;
       }
-      .tree-node.has-children > .children::before {
-        background: var(--line-strong);
-        content: "";
-        height: 2px;
-        left: 56px;
+      /* Curved SVG connectors layer */
+      .tree-node > .connector-svg {
         position: absolute;
-        right: 56px;
-        top: 0;
+        left: 0;
+        top: 100%;
+        pointer-events: none;
+        overflow: visible;
+        z-index: 0;
       }
-      .tree-node.has-children > .children::after {
-        background: var(--line-strong);
-        content: "";
-        height: 30px;
-        left: 50%;
-        position: absolute;
-        top: -30px;
-        width: 2px;
+      .tree-node > .connector-svg path {
+        fill: none;
+        stroke: var(--line-strong, #c4c8cf);
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        opacity: 0.85;
       }
-      .tree-node.has-children > .children > .tree-node::before {
-        background: var(--line-strong);
-        content: "";
-        height: 22px;
-        left: 50%;
-        position: absolute;
-        top: -22px;
-        width: 2px;
-      }
-      .profile-card .profile-meta, .profile-card .badges {
-        display: none;
-      }
+      .profile-card .profile-meta, .profile-card .badges { display: none; }
+
       .drag-preview {
-        background: rgba(255, 255, 255, 0.96);
+        background: rgba(255, 255, 255, 0.98);
         border: 1px solid var(--line);
-        border-radius: 12px;
-        box-shadow: 0 10px 28px rgba(20, 24, 32, 0.14);
-        color: #333;
+        border-radius: var(--radius-xl);
+        box-shadow: 0 12px 28px rgba(15, 20, 30, 0.14);
+        color: var(--text);
         left: -1000px;
         padding: 7px;
         pointer-events: none;
@@ -658,48 +814,51 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
       .drag-preview-photo {
         align-items: center;
-        background: #ffffff;
-        clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
+        background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+        border-radius: 999px;
+        color: var(--primary);
         display: flex;
-        font-size: 18px;
-        font-weight: 850;
+        font-size: 16px;
+        font-weight: 600;
         height: 56px;
         justify-content: center;
         margin: 0 auto 5px;
-        width: 64px;
+        width: 56px;
       }
       .drag-preview-title {
-        color: #30333a;
+        color: var(--text-2);
         font-size: 10px;
-        font-weight: 760;
+        font-weight: 500;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+
+      /* ============ Insights ============ */
       .insights {
         display: grid;
         gap: 14px;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        margin-top: 16px;
+        margin-top: 18px;
       }
       .insight-card {
         background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 9px;
-        padding: 14px;
+        border-radius: var(--radius-lg);
+        padding: 14px 16px;
       }
-      ul {
-        margin: 10px 0 0;
-        padding-left: 18px;
+      .insight-card h2 {
+        margin-bottom: 4px;
       }
-      li {
-        margin-bottom: 8px;
-      }
+      ul { margin: 8px 0 0; padding-left: 18px; color: var(--text-2); }
+      li { margin-bottom: 6px; font-size: 13px; }
+
+      /* ============ Contacts panel (right) ============ */
       .contacts-panel {
         background: var(--surface);
         border-left: 1px solid var(--line);
         min-width: 0;
-        padding: 20px 16px;
+        padding: 16px 12px;
       }
       .contacts-panel-inner {
         position: sticky;
@@ -711,77 +870,76 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         justify-content: space-between;
         gap: 12px;
         margin-bottom: 10px;
+        padding: 0 4px;
       }
+      .contacts-head h2 { font-size: 13px; font-weight: 600; }
       .add-contact-form {
-        background: #f7f7f8;
+        background: var(--surface-soft);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--radius-lg);
         display: none;
-        gap: 7px;
+        gap: 6px;
         margin-bottom: 12px;
         padding: 10px;
       }
       .add-contact-form.open { display: grid; }
       .add-contact-form input {
+        background: #fff;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         font: inherit;
         font-size: 12px;
         padding: 6px 8px;
         width: 100%;
       }
-      .add-contact-form input:focus { border-color: #888; outline: none; }
-      .add-contact-form-actions {
-        display: flex;
-        gap: 6px;
+      .add-contact-form input:focus {
+        border-color: var(--primary);
+        box-shadow: var(--ring-focus);
+        outline: none;
       }
-      .add-contact-form-actions button {
-        flex: 1;
-        font-size: 12px;
-        padding: 6px 8px;
-      }
-      .contact-list {
-        display: grid;
-        gap: 9px;
-      }
+      .add-contact-form-actions { display: flex; gap: 6px; }
+      .add-contact-form-actions button { flex: 1; font-size: 12px; padding: 6px 8px; }
+
+      .contact-list { display: grid; gap: 2px; }
       .contact-chip {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 8px;
+        background: transparent;
+        border: 0;
+        border-radius: var(--radius-md);
         cursor: grab;
         display: grid;
         gap: 10px;
-        grid-template-columns: 42px minmax(0, 1fr);
-        padding: 10px;
-        transition: opacity 160ms ease, filter 160ms ease, border-color 160ms ease;
+        grid-template-columns: 32px minmax(0, 1fr);
+        padding: 6px 8px;
+        transition: background-color 120ms ease, opacity 160ms ease;
       }
-      .contact-chip:hover {
-        border-color: #888;
-      }
-      .contact-chip.active {
-        border-color: #555;
-        box-shadow: 0 0 0 2px #eee;
-      }
+      .contact-chip:hover { background: var(--primary-soft); }
+      .contact-chip.active { background: var(--primary-soft-2); }
       .contact-chip[aria-disabled="true"] {
         cursor: pointer;
-        filter: grayscale(1);
-        opacity: 0.42;
+        filter: grayscale(0.6);
+        opacity: 0.5;
       }
       .contact-photo {
         align-items: center;
-        background: #eef2f6;
+        background: var(--primary-soft);
         border-radius: 999px;
-        color: #4b5563;
+        color: var(--primary);
         display: flex;
-        font-weight: 850;
-        height: 42px;
+        font-size: 11px;
+        font-weight: 600;
+        height: 32px;
         justify-content: center;
-        width: 42px;
+        width: 32px;
       }
       .contact-name {
-        font-weight: 760;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.3;
         overflow-wrap: anywhere;
       }
+
+      /* ============ Notes panel ============ */
       .notes-panel {
         background: var(--surface);
         border-left: 1px solid var(--line);
@@ -796,32 +954,42 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
       .notes-panel.open {
         opacity: 1;
-        padding: 18px;
+        padding: 16px 18px;
         pointer-events: auto;
         visibility: visible;
       }
       .notes-panel textarea {
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--radius-lg);
         font: inherit;
-        min-height: 180px;
-        padding: 10px;
+        font-size: 13px;
+        min-height: 160px;
+        padding: 10px 12px;
         resize: vertical;
         width: 100%;
       }
+      .notes-panel textarea:focus {
+        border-color: var(--primary);
+        box-shadow: var(--ring-focus);
+        outline: none;
+      }
       #close-notes {
         align-items: center;
+        background: transparent;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
+        color: var(--muted);
+        cursor: pointer;
         display: flex;
-        font-size: 18px;
-        height: 30px;
+        flex-shrink: 0;
+        font-size: 16px;
+        height: 28px;
         justify-content: center;
         padding: 0;
-        width: 30px;
-        flex-shrink: 0;
+        width: 28px;
       }
-      #close-notes:hover { background: #f2f3f5; color: var(--text); }
+      #close-notes:hover { background: var(--surface-soft); color: var(--text); }
       .notes-head {
         align-items: start;
         display: flex;
@@ -829,31 +997,32 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         gap: 12px;
         margin-bottom: 14px;
       }
+      #notes-name { font-size: 15px; font-weight: 600; letter-spacing: -0.005em; }
       .detail-status {
         color: var(--muted);
         font-size: 12px;
         margin-bottom: 12px;
       }
-      .detail-content {
-        display: grid;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
+      .detail-content { display: grid; gap: 10px; margin-bottom: 14px; }
       .detail-section {
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 12px;
+        border-radius: var(--radius-lg);
+        padding: 12px 14px;
       }
       .detail-section h3 {
+        color: var(--text);
         font-size: 12px;
-        margin: 0 0 9px;
-        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0;
+        margin: 0 0 8px;
+        text-transform: none;
       }
       .field-row {
         display: grid;
         gap: 8px;
-        grid-template-columns: 108px minmax(0, 1fr);
-        padding: 5px 0;
+        grid-template-columns: 100px minmax(0, 1fr);
+        padding: 4px 0;
       }
       .field-row span {
         color: var(--muted);
@@ -862,102 +1031,122 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .field-row strong, .field-row a {
         color: var(--text);
         font-size: 12px;
+        font-weight: 500;
         overflow-wrap: anywhere;
       }
       .field-row a {
-        color: #333;
-        text-decoration: underline;
+        color: var(--primary);
+        text-decoration: none;
       }
-      .mini-list {
-        display: grid;
-        gap: 8px;
-      }
+      .field-row a:hover { text-decoration: underline; }
+      .mini-list { display: grid; gap: 6px; }
       .mini-item {
-        background: #fbfbfc;
+        background: var(--surface-soft);
         border: 1px solid var(--line);
-        border-radius: 7px;
+        border-radius: var(--radius-md);
         font-size: 12px;
-        padding: 9px;
+        padding: 9px 10px;
       }
       .mini-item strong {
+        color: var(--text);
         display: block;
+        font-weight: 500;
         margin-bottom: 2px;
       }
       .notes-label {
         color: var(--muted);
         display: block;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 500;
         margin: 0 0 6px;
       }
       .linkedin-input {
-        background: #fff;
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--radius-lg);
         font: inherit;
         font-size: 13px;
         padding: 8px 10px;
         width: 100%;
       }
       .linkedin-input:focus {
-        border-color: #888;
+        border-color: var(--primary);
+        box-shadow: var(--ring-focus);
         outline: none;
       }
+
       .card-linkedin {
         align-items: center;
         background: #0a66c2;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         bottom: 6px;
         color: #fff;
         display: inline-flex;
-        font-size: 11px;
-        font-weight: 850;
-        height: 22px;
+        font-size: 10px;
+        font-weight: 600;
+        height: 20px;
         justify-content: center;
         position: absolute;
         right: 8px;
         text-decoration: none;
-        width: 22px;
+        width: 20px;
         z-index: 4;
       }
-      .card-linkedin:hover {
-        background: #084c93;
-      }
+      .card-linkedin:hover { background: #084c93; }
       .sentiment-dot {
         border-radius: 50%;
         border: 2px solid #fff;
-        box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
-        height: 16px;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.06);
+        height: 14px;
         position: absolute;
         right: 12px;
         top: 12px;
-        width: 16px;
+        width: 14px;
         z-index: 4;
       }
-      .sentiment-dot.positive { background: #18a957; }
-      .sentiment-dot.negative { background: #d8423d; }
-      .sentiment-dot.neutral { background: #c9a04a; }
+      .sentiment-dot.positive { background: var(--positive); }
+      .sentiment-dot.negative { background: var(--negative); }
+      .sentiment-dot.neutral { background: #b45309; }
+
+      /* ============ AI section ============ */
       .ai-section {
-        background: #faf8ff;
-        border: 1px solid #e6dfff;
-        border-radius: 8px;
+        background: linear-gradient(180deg, #faf8ff 0%, #fdf2f8 100%);
+        border: 1px solid var(--accent-violet-soft);
+        border-radius: var(--radius-lg);
         margin-top: 12px;
-        padding: 10px 12px;
+        padding: 12px 14px;
+        position: relative;
+      }
+      .ai-section::before {
+        background: linear-gradient(90deg, #5532ed 0%, #9747ff 55%, #f472b6 100%);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        content: "";
+        height: 2px;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
       }
       .ai-section h3 {
         align-items: center;
-        color: var(--purple);
+        background: linear-gradient(90deg, #5532ed 0%, #9747ff 60%, #ec4899 100%);
+        background-clip: text;
+        color: transparent;
         display: flex;
-        font-size: 12px;
-        font-weight: 800;
+        font-size: 11px;
+        font-weight: 600;
         gap: 6px;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.02em;
         margin: 0 0 8px;
         text-transform: uppercase;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
       .ai-section h3::before {
+        color: var(--primary);
         content: "✦";
         font-size: 13px;
+        -webkit-text-fill-color: initial;
       }
       .ai-row {
         display: flex;
@@ -970,20 +1159,160 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .ai-row span {
         color: var(--muted);
         font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
+        font-weight: 500;
+        letter-spacing: 0.02em;
         text-transform: uppercase;
       }
       .ai-pill {
         align-self: flex-start;
         border-radius: 999px;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 500;
         padding: 2px 8px;
       }
-      .ai-pill.positive { background: #e3f7eb; color: #0f6b34; }
-      .ai-pill.negative { background: #fce6e5; color: #9a201c; }
-      .ai-pill.neutral { background: #fdf3d7; color: #6e5208; }
+      .ai-pill.positive { background: var(--positive-soft); color: var(--positive); }
+      .ai-pill.negative { background: var(--negative-soft); color: var(--negative); }
+      .ai-pill.neutral { background: var(--notice-soft); color: var(--notice); }
+
+      /* ============ AI section head + sentiment pill select ============ */
+      .ai-section-head {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .ai-section-head h3 { margin: 0; }
+      .ai-tag {
+        background: linear-gradient(90deg, #5532ed 0%, #ec4899 100%);
+        border-radius: 999px;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        padding: 2px 7px;
+        text-transform: uppercase;
+      }
+      .pylon-tag {
+        background: #1f1147;
+        border-radius: 999px;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        padding: 2px 7px;
+        text-transform: uppercase;
+      }
+      .pylon-meta {
+        font-size: 11px;
+        margin-bottom: 8px;
+      }
+      .sentiment-pill-row {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .sentiment-pill-select {
+        appearance: none;
+        background: var(--surface);
+        background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+        background-repeat: no-repeat;
+        background-size: 5px 5px, 5px 5px;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 26px 4px 12px;
+      }
+      .sentiment-pill-select.engaged { background-color: #e0f2fe; color: #0369a1; }
+      .sentiment-pill-select.cautious { background-color: #fef3c7; color: #b45309; }
+      .sentiment-pill-select.blocker { background-color: #fee2e2; color: #b91c1c; }
+      .sentiment-pill-select.champion { background-color: #ede9fe; color: #6d28d9; }
+      .sentiment-pill-select option { background: #fff; color: var(--text); }
+
+      /* ============ Pylon-sourced sections ============ */
+      .pylon-section {
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5fb 100%);
+        border-color: #d8def0;
+      }
+      .next-step-list {
+        display: grid;
+        gap: 8px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .next-step-item {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 10px;
+      }
+      .next-step-action {
+        color: var(--text);
+        font-size: 12.5px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .next-step-meta {
+        align-items: center;
+        color: var(--text-2);
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 11px;
+        gap: 6px 10px;
+        margin-top: 4px;
+      }
+      .next-step-owner {
+        background: var(--surface-soft);
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+      .next-step-due { font-weight: 500; }
+
+      .gap-list { display: grid; gap: 10px; }
+      .gap-item {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .gap-head {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .gap-title { font-size: 12.5px; }
+      .gap-status {
+        background: var(--surface-soft);
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        padding: 2px 8px;
+        text-transform: uppercase;
+      }
+      .gap-status.planned { background: #dcfce7; color: #166534; }
+      .gap-status.triaged { background: #dbeafe; color: #1e40af; }
+      .gap-status.logged { background: #f1f5f9; color: #475569; }
+      .gap-description {
+        color: var(--text-2);
+        font-size: 12px;
+        line-height: 1.5;
+        margin-bottom: 6px;
+      }
+      .gap-attribution {
+        color: var(--text-2);
+        font-size: 11px;
+      }
+      .gap-attribution strong { color: var(--text); font-weight: 600; }
+
+      /* ============ Connection modal ============ */
       .connection-modal {
         display: none;
         inset: 0;
@@ -992,17 +1321,18 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
       .connection-modal.open { display: block; }
       .connection-modal-backdrop {
-        background: rgba(20, 24, 31, 0.45);
+        background: rgba(15, 23, 42, 0.40);
+        backdrop-filter: blur(4px);
         inset: 0;
         position: absolute;
       }
       .connection-modal-card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 20px 50px rgba(15, 20, 30, 0.18);
+        background: var(--surface);
+        border-radius: var(--radius-xl);
+        box-shadow: 0 24px 48px -12px rgba(15, 20, 30, 0.20);
         left: 50%;
-        max-width: 540px;
-        padding: 22px;
+        max-width: 520px;
+        padding: 22px 24px;
         position: absolute;
         top: 50%;
         transform: translate(-50%, -50%);
@@ -1015,13 +1345,21 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         justify-content: space-between;
         margin-bottom: 14px;
       }
-      .connection-modal-head h2 { font-size: 17px; margin: 0 0 2px; }
+      .connection-modal-head h2 {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0 0 2px;
+      }
       .connection-modal-head button {
         align-items: center;
+        background: transparent;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
+        color: var(--muted);
+        cursor: pointer;
         display: flex;
-        font-size: 18px;
+        font-size: 16px;
         height: 28px;
         justify-content: center;
         width: 28px;
@@ -1030,70 +1368,66 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .connection-label {
         color: var(--muted);
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
+        font-weight: 500;
+        letter-spacing: 0;
         margin-top: 10px;
-        text-transform: uppercase;
+        text-transform: none;
       }
       .connection-email {
-        background: #fff;
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--radius-lg);
         font: inherit;
         font-family: inherit;
         font-size: 13px;
-        line-height: 1.45;
-        padding: 9px 11px;
+        line-height: 1.5;
+        padding: 10px 12px;
         resize: vertical;
         width: 100%;
       }
       .connection-email:focus {
-        border-color: var(--purple);
+        border-color: var(--primary);
+        box-shadow: var(--ring-focus);
         outline: none;
       }
-      .picker {
-        position: relative;
-      }
+
+      /* ============ Picker (combobox) ============ */
+      .picker { position: relative; }
       .picker-button {
         align-items: center;
-        background: #fff;
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--radius-lg);
         cursor: pointer;
         display: flex;
         font: inherit;
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 400;
         justify-content: space-between;
-        padding: 9px 11px;
+        padding: 8px 11px;
         text-align: left;
         width: 100%;
       }
+      .picker-button:hover { border-color: var(--line-strong); }
       .picker-button:focus,
       .picker.open .picker-button {
-        border-color: var(--purple);
+        border-color: var(--primary);
+        box-shadow: var(--ring-focus);
         outline: none;
       }
       .picker-label {
+        color: var(--text);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      .picker-label.placeholder {
-        color: var(--muted);
-        font-weight: 400;
-      }
-      .picker-caret {
-        color: var(--muted);
-        flex-shrink: 0;
-        font-size: 11px;
-        margin-left: 8px;
-      }
+      .picker-label.placeholder { color: var(--muted); font-weight: 400; }
+      .picker-caret { color: var(--muted); flex-shrink: 0; font-size: 11px; margin-left: 8px; }
       .picker-popover {
-        background: #fff;
-        border: 1px solid var(--line-strong);
-        border-radius: 8px;
-        box-shadow: 0 8px 22px rgba(15, 20, 30, 0.14);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-pop);
         display: none;
         left: 0;
         margin-top: 4px;
@@ -1102,25 +1436,19 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         top: 100%;
         z-index: 60;
       }
-      .picker.open .picker-popover {
-        display: block;
-      }
+      .picker.open .picker-popover { display: block; }
       .picker-search {
         background: transparent;
         border: 0;
         border-bottom: 1px solid var(--line);
-        border-radius: 8px 8px 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         font: inherit;
         font-size: 13px;
         outline: none;
         padding: 10px 12px;
         width: 100%;
       }
-      .picker-list {
-        max-height: 220px;
-        overflow-y: auto;
-        padding: 4px 0;
-      }
+      .picker-list { max-height: 220px; overflow-y: auto; padding: 4px 0; }
       .picker-item {
         cursor: pointer;
         display: flex;
@@ -1129,38 +1457,27 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         gap: 1px;
         padding: 7px 12px;
       }
-      .picker-item.active,
-      .picker-item:hover {
-        background: var(--purple-soft);
-      }
-      .picker-item strong {
-        font-weight: 700;
-      }
-      .picker-item-meta {
-        color: var(--muted);
-        font-size: 11px;
-      }
-      .picker-empty {
-        color: var(--muted);
-        font-size: 12px;
-        padding: 14px;
-        text-align: center;
-      }
+      .picker-item.active, .picker-item:hover { background: var(--primary-soft); }
+      .picker-item strong { color: var(--text); font-weight: 500; }
+      .picker-item-meta { color: var(--muted); font-size: 11px; }
+      .picker-empty { color: var(--muted); font-size: 12px; padding: 14px; text-align: center; }
+
       .connection-modal-actions {
         display: flex;
         gap: 8px;
         justify-content: flex-end;
         margin-top: 16px;
       }
+
       .connection-pill {
         align-items: center;
-        background: #f1edff;
-        border: 1px solid #d6c9ff;
+        background: var(--primary-soft);
+        border: 1px solid var(--primary-soft-2);
         border-radius: 999px;
-        color: var(--purple);
+        color: var(--primary);
         display: inline-flex;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 500;
         gap: 4px;
         margin: 8px auto 0;
         padding: 2px 8px;
@@ -1170,43 +1487,178 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         margin: 8px auto 0;
         text-align: center;
       }
-      .profile-card-info {
-        text-align: center;
-      }
+      .profile-card-info { text-align: center; }
       .connection-line {
-        background: var(--purple);
-        height: 2px;
+        background: var(--primary);
+        height: 1.5px;
         opacity: 0.4;
         pointer-events: none;
         position: absolute;
         transform-origin: left center;
         z-index: 1;
       }
+
       @media (max-width: 1120px) {
         .app-shell {
-          grid-template-columns: 54px minmax(0, 1fr) 330px 0px;
+          grid-template-columns: 48px minmax(0, 1fr) 320px 0px;
         }
         .app-shell.notes-open {
-          grid-template-columns: 54px minmax(0, 1fr) 0px 380px;
+          grid-template-columns: 48px minmax(0, 1fr) 0px 380px;
         }
-        .account-nav {
-          display: none;
-        }
+        .account-nav { display: none; }
       }
       @media (max-width: 860px) {
-        .app-shell {
-          grid-template-columns: 1fr;
-        }
-        .rail, .contacts-panel {
-          display: none;
-        }
-        .stage {
-          padding: 18px;
-        }
-        .insights {
-          grid-template-columns: 1fr;
-        }
+        .app-shell { grid-template-columns: 1fr; }
+        .rail, .contacts-panel { display: none; }
+        .stage { padding: 18px; }
+        .insights { grid-template-columns: 1fr; }
       }
+
+      /* ============ Tweak variants ============ */
+      body { font-size: calc(13px * var(--tw-font-scale, 1)); }
+      body.photo-circle .profile-card-photo {
+        border-radius: 999px;
+        aspect-ratio: 1 / 1;
+        height: var(--card-photo-h);
+        width: var(--card-photo-h);
+        margin: 0 auto;
+      }
+      body.photo-circle .profile-card-info { margin-top: -16px; }
+      body.photo-rect .profile-card-photo { border-radius: 12px 12px 8px 8px; }
+      body.hide-stats .profile-card-stats { display: none; }
+      body.hide-stats .profile-card-info { padding-bottom: 10px; }
+      body.hide-photo .profile-card-photo { display: none; }
+      body.hide-photo .profile-card-info {
+        border-radius: var(--radius-xl);
+        margin-top: 0;
+      }
+      body.hide-photo .profile-card { padding-top: 0; }
+
+      /* ============ Tweaks panel ============ */
+      .tweaks-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        bottom: 16px;
+        box-shadow: var(--shadow-pop);
+        display: none;
+        flex-direction: column;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+        max-height: calc(100vh - 32px);
+        position: fixed;
+        right: 16px;
+        width: 280px;
+        z-index: 100;
+      }
+      .tweaks-panel.open { display: flex; }
+      .tweaks-head {
+        align-items: center;
+        border-bottom: 1px solid var(--line-soft);
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 12px;
+      }
+      .tweaks-head h3 {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        margin: 0;
+      }
+      .tweaks-close {
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 18px;
+        height: 26px;
+        line-height: 1;
+        padding: 0;
+        width: 26px;
+      }
+      .tweaks-close:hover { background: var(--surface-soft); color: var(--text); }
+      .tweaks-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        padding: 12px;
+      }
+      .tweak-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .tweak-section-title {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .tweak-row {
+        align-items: center;
+        color: var(--text-2);
+        display: flex;
+        font-size: 12px;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .tweak-row > span:first-child { flex-shrink: 0; }
+      .tweak-control {
+        align-items: center;
+        display: inline-flex;
+        gap: 6px;
+        min-width: 0;
+      }
+      .tweak-control input[type=range] {
+        accent-color: var(--primary);
+        width: 110px;
+      }
+      .tweak-control output {
+        color: var(--muted);
+        font-feature-settings: "tnum" 1;
+        font-size: 11px;
+        min-width: 36px;
+        text-align: right;
+      }
+      .tweak-segmented {
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        display: inline-flex;
+        padding: 2px;
+      }
+      .tweak-segmented button {
+        background: transparent;
+        border: 0;
+        border-radius: 4px;
+        color: var(--muted);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 8px;
+      }
+      .tweak-segmented button.active {
+        background: var(--surface);
+        box-shadow: 0 1px 2px rgba(15, 20, 30, 0.06);
+        color: var(--text);
+      }
+      .tweak-reset {
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--text-2);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 4px;
+        padding: 6px 10px;
+      }
+      .tweak-reset:hover { background: var(--line-soft); }
     </style>
   </head>
   <body>
@@ -1301,6 +1753,11 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             </div>
           </div>
           <section class="map-panel" aria-label="Org chart map">
+            <div class="zoom-controls" role="group" aria-label="Zoom">
+              <button type="button" class="zoom-btn" id="zoom-out" aria-label="Zoom out">−</button>
+              <button type="button" class="zoom-btn zoom-level" id="zoom-fit" aria-label="Fit to view">100%</button>
+              <button type="button" class="zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
+            </div>
             <div id="org-tree" class="tree"></div>
           </section>
           <section class="insights">
@@ -1406,6 +1863,40 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const accountMetrics = ${accountMetricsJson};
       const opportunitiesById = new Map(opportunities.map((o) => [o.id, o]));
       const peopleById = new Map(people.map((person) => [person.id, person]));
+
+      // Hydrate any custom contacts saved from previous sessions.
+      const CUSTOM_CONTACTS_KEY = "orgmap.customContacts.v1";
+      function loadSavedCustomContacts() {
+        try {
+          const raw = localStorage.getItem(CUSTOM_CONTACTS_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          return [];
+        }
+      }
+      function persistCustomContact(person) {
+        try {
+          const saved = loadSavedCustomContacts();
+          const idx = saved.findIndex((p) => p.id === person.id);
+          if (idx >= 0) saved[idx] = person;
+          else saved.push(person);
+          localStorage.setItem(CUSTOM_CONTACTS_KEY, JSON.stringify(saved));
+        } catch (err) {
+          // Storage may be unavailable — fail silently.
+        }
+      }
+      loadSavedCustomContacts().forEach((person) => {
+        if (!person?.id || peopleById.has(person.id)) return;
+        people.push(person);
+        peopleById.set(person.id, person);
+      });
+      requestAnimationFrame(() => {
+        const totalEl = document.querySelector("#total-count");
+        if (totalEl) totalEl.textContent = people.length;
+      });
+
       const contactDetailCache = new Map();
       const state = {
         roots: [],
@@ -1523,6 +2014,14 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const linkedinInput = document.querySelector("#linkedin-input");
       const detailStatus = document.querySelector("#detail-status");
       const detailContent = document.querySelector("#detail-content");
+
+      // Sentiment pill: live color swap on edit
+      detailContent.addEventListener("change", (event) => {
+        const sel = event.target.closest("[data-sentiment-bucket]");
+        if (!sel) return;
+        sel.classList.remove("engaged", "cautious", "blocker", "champion");
+        sel.classList.add(sel.value);
+      });
 
       document.querySelector("#clear-chart").addEventListener("click", () => {
         state.roots = [];
@@ -1993,31 +2492,78 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       }
 
       async function loadContactDetails(person) {
-        const params = new URLSearchParams(window.location.search);
-        if (accountId && !params.get("account_id")) params.set("account_id", accountId);
-        params.set("contact_id", person.id || "");
-        params.set("name", person.name || "");
-        params.set("source", person.source || "");
-        if (person.email) params.set("email", person.email);
+        // Synthesize Pylon-shaped data from the local mock context — this static preview
+        // can't reach the live MCP, so we pull from people/customFields/notes locally.
+        await new Promise((r) => setTimeout(r, 320)); // pretend network
+        return buildPylonContactDetail(person);
+      }
 
-        const response = await fetch(\`/api/contact-details?\${params.toString()}\`, {
-          headers: { Accept: "application/json" }
-        });
-        const payload = await response.json();
-        if (!response.ok || payload.error) {
-          throw new Error(payload.error || "Contact lookup failed");
-        }
-        return payload;
+      function buildPylonContactDetail(person) {
+        const ai = person.aiFields || {};
+        const lastCallDate = "Apr 24"; // pretend most recent call
+        const nextStepsByPerson = {
+          con_mia: [
+            { action: "Send export schema doc + walkthrough video", owner: "Dana Lee", due: "May 2" },
+            { action: "Confirm renewal pricing guardrails", owner: "Dana Lee", due: "May 9" },
+            { action: "Loop in Mia on SSO unblock once issue #4182 lands", owner: "Customer Success", due: "When ready" }
+          ],
+          con_omar: [
+            { action: "Validate ACS URL after CDN cutover", owner: "Omar Silva", due: "Apr 30" },
+            { action: "Review SSO migration runbook with TAM", owner: "Dana Lee", due: "May 1" }
+          ]
+        };
+        const gapsByPerson = {
+          con_mia: [
+            { title: "Custom export schema for Snowflake", description: "Mia needs column-level control before approving rollout. Currently piping through Workato adds 2 days latency.", raisedBy: "Mia Chen", status: "Triaged" },
+            { title: "Renewal pricing guardrails in admin", description: "Wants self-service guardrails so finance can preview ARR impact before commit.", raisedBy: "Mia Chen", status: "Logged" }
+          ],
+          con_omar: [
+            { title: "SSO ACS URL must accept multiple values", description: "IT pushed ACS URL change behind CDN; redirects fail intermittently. Needs allow-list, not single value.", raisedBy: "Omar Silva", status: "Planned" },
+            { title: "Audit log export for SOC2 evidence", description: "Compliance team asked for monthly audit log dump; current export is gated to admins only.", raisedBy: "Omar Silva", status: "Logged" }
+          ]
+        };
+        const fallbackNextSteps = [
+          { action: "Schedule discovery follow-up", owner: "Account team", due: "This week" }
+        ];
+        const fallbackGaps = [];
+        return {
+          mode: "demo",
+          sourceNote: \`Pulled from Pylon · last call \${lastCallDate}\`,
+          contact: {
+            name: person.name,
+            title: person.title,
+            email: person.email,
+            phone: person.phone || "",
+            accountId: person.accountId || "acme-risk",
+            portalRole: person.buyingRole || "",
+            customFields: ai
+          },
+          aiFields: ai,
+          lastCall: { date: lastCallDate, summary: ai.summary || "" },
+          pylonNextSteps: nextStepsByPerson[person.id] || fallbackNextSteps,
+          pylonGaps: gapsByPerson[person.id] || fallbackGaps,
+          links: {
+            pylonContact: \`https://app.usepylon.com/contacts/\${person.id || ""}\`,
+            evidence: person.linkedinUrl || ""
+          },
+          crmFields: [],
+          externalIds: [],
+          relatedIssues: [],
+          recentMessages: [],
+          systemWarnings: []
+        };
       }
 
       function renderContactDetail(detail) {
         const contact = detail.contact || {};
         const node = peopleById.get(state.activeNoteId) || {};
         notesName.textContent = contact.name || "Contact details";
-        notesTitle.textContent = [contact.title, detail.mode === "live" ? "Live Pylon" : "Demo data"].filter(Boolean).join(" · ");
-        detailStatus.textContent = detail.sourceNote || "Loaded on click.";
+        notesTitle.textContent = [contact.title, "Pylon contact"].filter(Boolean).join(" · ");
+        detailStatus.textContent = detail.sourceNote || "";
         detailContent.innerHTML = [
-          renderAiInsights(node.aiFields, contact.customFields),
+          renderSentimentBlock(node.aiFields, contact.customFields),
+          renderPylonNextSteps(detail.pylonNextSteps, detail.lastCall),
+          renderPylonGaps(detail.pylonGaps),
           detailSection("Profile", [
             ["Email", contact.email],
             ["Phone", contact.phone],
@@ -2026,7 +2572,6 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           ]),
           detailSection("Links", [
             ["Pylon", detail.links?.pylonContact],
-            ["Salesforce", detail.links?.salesforce],
             ["Evidence", detail.links?.evidence]
           ]),
           detail.crmFields?.length ? detailSection("CRM Fields", detail.crmFields.map((field) => [field.label, field.value])) : "",
@@ -2048,6 +2593,86 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             body: warning
           }))) : ""
         ].join("");
+      }
+
+      // Map raw sentiment to the four canonical pill labels.
+      function pylonSentimentBucket(aiFields, customFields) {
+        const fields = aiFields || {};
+        const cf = customFields || {};
+        const raw = (cf.sentiment_label || cf.ai_sentiment || cf.sentiment || fields.sentiment || "").toString().toLowerCase();
+        const reason = (fields.sentimentReason || cf.low_sentiment_reason || cf.sentiment || "").toString().toLowerCase();
+        const text = \`\${raw} \${reason}\`;
+        if (/champion/.test(text)) return "champion";
+        if (/block|risk|frustrat|angry|stalled/.test(text)) return "blocker";
+        if (/caution|hesitant|mixed|neutral/.test(text)) return "cautious";
+        if (/positive|engag|interested|happy|strong|excited/.test(text)) return "engaged";
+        return raw ? "cautious" : "";
+      }
+
+      function renderSentimentBlock(aiFields, customFields) {
+        const bucket = pylonSentimentBucket(aiFields, customFields);
+        if (!bucket) return "";
+        const label = bucket.charAt(0).toUpperCase() + bucket.slice(1);
+        const reason = (aiFields?.sentimentReason || aiFields?.summary || customFields?.low_sentiment_reason || customFields?.ai_summary || "").toString();
+        return \`<section class="ai-section">
+          <div class="ai-section-head">
+            <h3>Sentiment</h3>
+            <span class="ai-tag" title="Auto-classified by Pylon">AI</span>
+          </div>
+          <div class="sentiment-pill-row">
+            <select class="sentiment-pill-select \${escapeAttr(bucket)}" data-sentiment-bucket>
+              <option value="engaged" \${bucket === "engaged" ? "selected" : ""}>Engaged</option>
+              <option value="cautious" \${bucket === "cautious" ? "selected" : ""}>Cautious</option>
+              <option value="blocker" \${bucket === "blocker" ? "selected" : ""}>Blocker</option>
+              <option value="champion" \${bucket === "champion" ? "selected" : ""}>Champion</option>
+            </select>
+            <span class="muted">Auto-classified · editable</span>
+          </div>
+          \${reason ? \`<div class="ai-row"><span>Why</span>\${escapeHtml(reason)}</div>\` : ""}
+        </section>\`;
+      }
+
+      function renderPylonNextSteps(nextSteps, lastCall) {
+        if (!nextSteps?.length) return "";
+        const meta = lastCall?.date ? \`From last call · \${escapeHtml(lastCall.date)}\` : "From Pylon";
+        return \`<section class="detail-section pylon-section">
+          <div class="ai-section-head">
+            <h3>Next Steps</h3>
+            <span class="pylon-tag" title="Sourced from Pylon MCP">Pylon</span>
+          </div>
+          <div class="muted pylon-meta">\${meta}</div>
+          <ul class="next-step-list">
+            \${nextSteps.map((step) => \`
+              <li class="next-step-item">
+                <div class="next-step-action">\${escapeHtml(step.action || "")}</div>
+                <div class="next-step-meta">
+                  \${step.owner ? \`<span class="next-step-owner">\${escapeHtml(step.owner)}</span>\` : ""}
+                  \${step.due ? \`<span class="next-step-due">Due \${escapeHtml(step.due)}</span>\` : ""}
+                </div>
+              </li>\`).join("")}
+          </ul>
+        </section>\`;
+      }
+
+      function renderPylonGaps(gaps) {
+        if (!gaps?.length) return "";
+        return \`<section class="detail-section pylon-section">
+          <div class="ai-section-head">
+            <h3>Gaps · Feature Requests</h3>
+            <span class="pylon-tag" title="Sourced from Pylon MCP">Pylon</span>
+          </div>
+          <div class="gap-list">
+            \${gaps.map((gap) => \`
+              <div class="gap-item">
+                <div class="gap-head">
+                  <strong class="gap-title">\${escapeHtml(gap.title || "")}</strong>
+                  \${gap.status ? \`<span class="gap-status \${escapeAttr(gap.status.toLowerCase())}">\${escapeHtml(gap.status)}</span>\` : ""}
+                </div>
+                \${gap.description ? \`<div class="gap-description">\${escapeHtml(gap.description)}</div>\` : ""}
+                \${gap.raisedBy ? \`<div class="gap-attribution">Raised by <strong>\${escapeHtml(gap.raisedBy)}</strong></div>\` : ""}
+              </div>\`).join("")}
+          </div>
+        </section>\`;
       }
 
       function renderAiInsights(aiFields, customFields) {
@@ -2292,6 +2917,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         people.push(person);
         peopleById.set(id, person);
         state.notesById[id] = "";
+        persistCustomContact(person);
         document.querySelector("#total-count").textContent = people.length;
         render();
       }
@@ -2395,6 +3021,442 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       function escapeAttr(value) {
         return escapeHtml(value).replace(/\\\`/g, "&#96;");
       }
+
+      /* ===================== Zoom + Tweaks ===================== */
+      const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+        "scale": 1,
+        "cardWidth": 168,
+        "photoHeight": 138,
+        "rowGap": 28,
+        "colGap": 48,
+        "fontScale": 1,
+        "showStats": true,
+        "showPhoto": false,
+        "photoShape": "arch"
+      }/*EDITMODE-END*/;
+
+      const tweakState = { ...TWEAK_DEFAULTS };
+
+      function applyTweaks() {
+        const root = document.documentElement;
+        const tree = document.getElementById("org-tree");
+        if (tree) tree.style.transform = \`scale(\${tweakState.scale})\`;
+        root.style.setProperty("--tw-card-w", tweakState.cardWidth + "px");
+        root.style.setProperty("--tw-photo-h", tweakState.photoHeight + "px");
+        root.style.setProperty("--tw-row-gap", tweakState.rowGap + "px");
+        root.style.setProperty("--tw-col-gap", tweakState.colGap + "px");
+        root.style.setProperty("--tw-font-scale", String(tweakState.fontScale));
+        document.body.classList.toggle("hide-stats", !tweakState.showStats);
+        document.body.classList.toggle("hide-photo", !tweakState.showPhoto);
+        document.body.classList.toggle("photo-circle", tweakState.photoShape === "circle");
+        document.body.classList.toggle("photo-rect", tweakState.photoShape === "rect");
+        const zl = document.getElementById("zoom-fit");
+        if (zl) zl.textContent = Math.round(tweakState.scale * 100) + "%";
+      }
+
+      function setTweak(key, value) {
+        tweakState[key] = value;
+        applyTweaks();
+        try {
+          window.parent.postMessage({ type: "__edit_mode_set_keys", edits: { [key]: value } }, "*");
+        } catch (_) {}
+      }
+
+      // Zoom controls
+      const ZOOM_STEP = 0.1;
+      const ZOOM_MIN = 0.4;
+      const ZOOM_MAX = 2;
+      document.getElementById("zoom-in")?.addEventListener("click", () => {
+        setTweak("scale", Math.min(ZOOM_MAX, +(tweakState.scale + ZOOM_STEP).toFixed(2)));
+      });
+      document.getElementById("zoom-out")?.addEventListener("click", () => {
+        setTweak("scale", Math.max(ZOOM_MIN, +(tweakState.scale - ZOOM_STEP).toFixed(2)));
+      });
+      document.getElementById("zoom-fit")?.addEventListener("click", () => {
+        setTweak("scale", 1);
+      });
+      // Ctrl/Cmd + scroll to zoom
+      document.querySelector(".map-panel")?.addEventListener("wheel", (e) => {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+        setTweak("scale", Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(tweakState.scale + delta).toFixed(2))));
+      }, { passive: false });
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (e.target.matches("input, textarea, [contenteditable]")) return;
+        if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) {
+          e.preventDefault();
+          setTweak("scale", Math.min(ZOOM_MAX, +(tweakState.scale + ZOOM_STEP).toFixed(2)));
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "-") {
+          e.preventDefault();
+          setTweak("scale", Math.max(ZOOM_MIN, +(tweakState.scale - ZOOM_STEP).toFixed(2)));
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+          e.preventDefault();
+          setTweak("scale", 1);
+        }
+      });
+
+      // ============ Tweaks panel ============
+      function buildTweaksPanel() {
+        if (document.getElementById("tweaks-panel")) return;
+        const wrap = document.createElement("div");
+        wrap.id = "tweaks-panel";
+        wrap.className = "tweaks-panel";
+        wrap.setAttribute("aria-label", "Tweaks");
+        wrap.innerHTML = \`
+          <header class="tweaks-head">
+            <h3>Tweaks</h3>
+            <button type="button" class="tweaks-close" aria-label="Close tweaks">×</button>
+          </header>
+          <div class="tweaks-body">
+            <div class="tweak-section">
+              <div class="tweak-section-title">Org chart</div>
+              <label class="tweak-row">
+                <span>Zoom</span>
+                <span class="tweak-control">
+                  <input type="range" data-tweak="scale" min="0.4" max="2" step="0.05" value="\${tweakState.scale}">
+                  <output data-output="scale">\${Math.round(tweakState.scale * 100)}%</output>
+                </span>
+              </label>
+              <label class="tweak-row">
+                <span>Card width</span>
+                <span class="tweak-control">
+                  <input type="range" data-tweak="cardWidth" min="120" max="240" step="4" value="\${tweakState.cardWidth}">
+                  <output data-output="cardWidth">\${tweakState.cardWidth}px</output>
+                </span>
+              </label>
+              <label class="tweak-row">
+                <span>Photo height</span>
+                <span class="tweak-control">
+                  <input type="range" data-tweak="photoHeight" min="80" max="200" step="2" value="\${tweakState.photoHeight}">
+                  <output data-output="photoHeight">\${tweakState.photoHeight}px</output>
+                </span>
+              </label>
+              <label class="tweak-row">
+                <span>Show photo</span>
+                <span class="tweak-control">
+                  <input type="checkbox" data-tweak="showPhoto" \${tweakState.showPhoto ? "checked" : ""}>
+                </span>
+              </label>
+              <label class="tweak-row">
+                <span>Photo shape</span>
+                <span class="tweak-segmented" role="radiogroup">
+                  <button type="button" data-tweak-radio="photoShape" data-value="arch">Arch</button>
+                  <button type="button" data-tweak-radio="photoShape" data-value="circle">Circle</button>
+                  <button type="button" data-tweak-radio="photoShape" data-value="rect">Rect</button>
+                </span>
+              </label>
+              <label class="tweak-row">
+                <span>Show stats</span>
+                <span class="tweak-control">
+                  <input type="checkbox" data-tweak="showStats" \${tweakState.showStats ? "checked" : ""}>
+                </span>
+              </label>
+            </div>
+            <div class="tweak-section">
+              <div class="tweak-section-title">Spacing</div>
+              <label class="tweak-row">
+                <span>Row gap</span>
+                <span class="tweak-control">
+                  <input type="range" data-tweak="rowGap" min="12" max="60" step="2" value="\${tweakState.rowGap}">
+                  <output data-output="rowGap">\${tweakState.rowGap}px</output>
+                </span>
+              </label>
+              <label class="tweak-row">
+                <span>Column gap</span>
+                <span class="tweak-control">
+                  <input type="range" data-tweak="colGap" min="20" max="100" step="2" value="\${tweakState.colGap}">
+                  <output data-output="colGap">\${tweakState.colGap}px</output>
+                </span>
+              </label>
+            </div>
+            <div class="tweak-section">
+              <div class="tweak-section-title">Type</div>
+              <label class="tweak-row">
+                <span>UI text scale</span>
+                <span class="tweak-control">
+                  <input type="range" data-tweak="fontScale" min="0.85" max="1.2" step="0.025" value="\${tweakState.fontScale}">
+                  <output data-output="fontScale">\${Math.round(tweakState.fontScale * 100)}%</output>
+                </span>
+              </label>
+            </div>
+            <button type="button" class="tweak-reset">Reset</button>
+          </div>
+        \`;
+        document.body.appendChild(wrap);
+
+        wrap.querySelector(".tweaks-close").addEventListener("click", () => {
+          wrap.classList.remove("open");
+          try { window.parent.postMessage({ type: "__edit_mode_dismissed" }, "*"); } catch (_) {}
+        });
+        wrap.querySelectorAll("input[type=range]").forEach((input) => {
+          input.addEventListener("input", () => {
+            const key = input.dataset.tweak;
+            const val = parseFloat(input.value);
+            setTweak(key, val);
+            const out = wrap.querySelector(\`[data-output="\${key}"]\`);
+            if (out) {
+              if (key === "scale" || key === "fontScale") out.textContent = Math.round(val * 100) + "%";
+              else out.textContent = val + "px";
+            }
+          });
+        });
+        wrap.querySelectorAll("input[type=checkbox]").forEach((input) => {
+          input.addEventListener("change", () => {
+            setTweak(input.dataset.tweak, input.checked);
+          });
+        });
+        wrap.querySelectorAll("[data-tweak-radio]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const key = btn.dataset.tweakRadio;
+            setTweak(key, btn.dataset.value);
+            wrap.querySelectorAll(\`[data-tweak-radio="\${key}"]\`).forEach((b) => b.classList.toggle("active", b.dataset.value === btn.dataset.value));
+          });
+        });
+        // Initial active states for radio
+        wrap.querySelectorAll("[data-tweak-radio]").forEach((btn) => {
+          btn.classList.toggle("active", tweakState[btn.dataset.tweakRadio] === btn.dataset.value);
+        });
+        wrap.querySelector(".tweak-reset").addEventListener("click", () => {
+          Object.keys(TWEAK_DEFAULTS).forEach((k) => setTweak(k, TWEAK_DEFAULTS[k]));
+          // refresh inputs to defaults
+          wrap.querySelectorAll("input[type=range]").forEach((i) => {
+            i.value = String(TWEAK_DEFAULTS[i.dataset.tweak]);
+            const out = wrap.querySelector(\`[data-output="\${i.dataset.tweak}"]\`);
+            if (out) {
+              const v = TWEAK_DEFAULTS[i.dataset.tweak];
+              if (i.dataset.tweak === "scale" || i.dataset.tweak === "fontScale") out.textContent = Math.round(v * 100) + "%";
+              else out.textContent = v + "px";
+            }
+          });
+          wrap.querySelectorAll("input[type=checkbox]").forEach((i) => { i.checked = !!TWEAK_DEFAULTS[i.dataset.tweak]; });
+          wrap.querySelectorAll("[data-tweak-radio]").forEach((b) => {
+            b.classList.toggle("active", TWEAK_DEFAULTS[b.dataset.tweakRadio] === b.dataset.value);
+          });
+        });
+      }
+
+      // Tweaks host integration
+      window.addEventListener("message", (event) => {
+        const msg = event.data || {};
+        if (msg.type === "__activate_edit_mode") {
+          buildTweaksPanel();
+          document.getElementById("tweaks-panel").classList.add("open");
+        } else if (msg.type === "__deactivate_edit_mode") {
+          document.getElementById("tweaks-panel")?.classList.remove("open");
+        }
+      });
+      try { window.parent.postMessage({ type: "__edit_mode_available" }, "*"); } catch (_) {}
+
+      // Apply defaults at boot
+      applyTweaks();
+
+      // ============ Click-and-drag panning ============
+      (function setupMapPan() {
+        const mapPanel = document.querySelector(".map-panel");
+        if (!mapPanel) return;
+
+        let pan = null;
+        const isInteractive = (el) =>
+          el && el.closest && (
+            el.closest(".profile-card") ||
+            el.closest("button") ||
+            el.closest("a") ||
+            el.closest("input, textarea, [contenteditable]") ||
+            el.closest(".zoom-controls") ||
+            el.closest(".connection-pill") ||
+            el.closest(".tweaks-panel")
+          );
+
+        mapPanel.addEventListener("mousedown", (e) => {
+          if (e.button !== 0 && e.button !== 1) return;
+          if (e.button === 0 && isInteractive(e.target)) return;
+          pan = {
+            startX: e.clientX,
+            startY: e.clientY,
+            scrollLeft: mapPanel.scrollLeft,
+            scrollTop: mapPanel.scrollTop,
+            moved: false
+          };
+          mapPanel.classList.add("panning");
+          e.preventDefault();
+        });
+
+        window.addEventListener("mousemove", (e) => {
+          if (!pan) return;
+          const dx = e.clientX - pan.startX;
+          const dy = e.clientY - pan.startY;
+          if (!pan.moved && Math.hypot(dx, dy) > 3) pan.moved = true;
+          if (pan.moved) {
+            mapPanel.scrollLeft = pan.scrollLeft - dx;
+            mapPanel.scrollTop = pan.scrollTop - dy;
+          }
+        });
+
+        window.addEventListener("mouseup", () => {
+          if (!pan) return;
+          mapPanel.classList.remove("panning");
+          pan = null;
+        });
+
+        mapPanel.addEventListener("mouseleave", () => {
+          // keep pan active when mouse leaves panel; stop on global mouseup
+        });
+
+        // Touch panning (single-finger on empty space)
+        mapPanel.addEventListener("touchstart", (e) => {
+          if (e.touches.length !== 1) return;
+          if (isInteractive(e.target)) return;
+          const t = e.touches[0];
+          pan = {
+            startX: t.clientX,
+            startY: t.clientY,
+            scrollLeft: mapPanel.scrollLeft,
+            scrollTop: mapPanel.scrollTop,
+            moved: false
+          };
+        }, { passive: true });
+
+        mapPanel.addEventListener("touchmove", (e) => {
+          if (!pan || e.touches.length !== 1) return;
+          const t = e.touches[0];
+          const dx = t.clientX - pan.startX;
+          const dy = t.clientY - pan.startY;
+          if (Math.hypot(dx, dy) > 3) {
+            mapPanel.scrollLeft = pan.scrollLeft - dx;
+            mapPanel.scrollTop = pan.scrollTop - dy;
+            pan.moved = true;
+          }
+        }, { passive: true });
+
+        mapPanel.addEventListener("touchend", () => { pan = null; });
+      })();
+
+      // ============ Curved connector lines ============
+      (function setupCurvedConnectors() {
+        const treeRoot = document.querySelector(".org-tree, .map-panel") || document.body;
+
+        function drawAll() {
+          // Account for the #org-tree transform: scale() — getBoundingClientRect()
+          // returns post-scale pixels, but svg.style values get scaled again,
+          // so we divide deltas by the current scale.
+          const tree = document.getElementById("org-tree");
+          let zoom = 1;
+          if (tree) {
+            const m = tree.style.transform.match(/scale\\(([\\d.]+)\\)/);
+            if (m) zoom = parseFloat(m[1]) || 1;
+          }
+          const parents = document.querySelectorAll(".tree-node.has-children");
+          parents.forEach((parent) => {
+            // Find parent's profile card and direct children's cards
+            const parentCard = parent.querySelector(":scope > .profile-card");
+            const childrenWrap = parent.querySelector(":scope > .children");
+            if (!parentCard || !childrenWrap) return;
+            const childNodes = childrenWrap.querySelectorAll(":scope > .tree-node");
+            if (!childNodes.length) return;
+
+            // Get or create SVG inside parent (positioned at parent's bottom)
+            let svg = parent.querySelector(":scope > svg.connector-svg");
+            if (!svg) {
+              svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+              svg.setAttribute("class", "connector-svg");
+              parent.appendChild(svg);
+            }
+
+            const parentRect = parent.getBoundingClientRect();
+            const parentCardRect = parentCard.getBoundingClientRect();
+
+            // SVG sized to span from parent bottom edge down to bottom of children wrap
+            const svgTopAbs = parentCardRect.bottom;
+            // bottom = top of child cards
+            let childTopMin = Infinity;
+            let childLeftMin = Infinity;
+            let childRightMax = -Infinity;
+            const childPoints = [];
+            childNodes.forEach((cn) => {
+              const cc = cn.querySelector(":scope > .profile-card");
+              if (!cc) return;
+              const r = cc.getBoundingClientRect();
+              if (r.top < childTopMin) childTopMin = r.top;
+              const cx = r.left + r.width / 2;
+              if (r.left < childLeftMin) childLeftMin = r.left;
+              if (r.right > childRightMax) childRightMax = r.right;
+              childPoints.push({ x: cx, y: r.top });
+            });
+            if (!childPoints.length) return;
+
+            const parentBottomCenterX = parentCardRect.left + parentCardRect.width / 2;
+
+            const left = Math.min(parentCardRect.left, childLeftMin) - 4;
+            const right = Math.max(parentCardRect.right, childRightMax) + 4;
+            const widthScaled = right - left;
+            const heightScaled = Math.max(childTopMin - svgTopAbs, 1);
+            const width = widthScaled / zoom;
+            const height = heightScaled / zoom;
+
+            // Position svg relative to parent (.tree-node) — divide by zoom because
+            // the svg itself sits inside the scaled #org-tree.
+            svg.style.left = ((left - parentRect.left) / zoom) + "px";
+            svg.style.top = ((svgTopAbs - parentRect.top) / zoom) + "px";
+            svg.setAttribute("width", width);
+            svg.setAttribute("height", height);
+            svg.setAttribute("viewBox", \`0 0 \${width} \${height}\`);
+
+            // Build curved path for each child (in unscaled coords)
+            const px = (parentBottomCenterX - left) / zoom;
+            const py = 0;
+            const paths = childPoints.map(({ x, y }) => {
+              const cx = (x - left) / zoom;
+              const cy = (y - svgTopAbs) / zoom;
+              // Cubic Bezier: control points pulled toward midline vertically.
+              // c1 below parent (downward), c2 above child (downward-curving in)
+              const midY = (py + cy) / 2;
+              const c1x = px;
+              const c1y = midY;
+              const c2x = cx;
+              const c2y = midY;
+              return \`M \${px} \${py} C \${c1x} \${c1y}, \${c2x} \${c2y}, \${cx} \${cy}\`;
+            });
+
+            // Single combined path element for perf
+            let path = svg.querySelector("path");
+            if (!path) {
+              path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+              svg.appendChild(path);
+            }
+            path.setAttribute("d", paths.join(" "));
+          });
+        }
+
+        // Redraw on resize, scroll, zoom changes, and after fonts load
+        let raf;
+        function schedule() {
+          if (raf) return;
+          raf = requestAnimationFrame(() => { raf = null; drawAll(); });
+        }
+
+        window.addEventListener("resize", schedule);
+        // Watch for tweak/zoom changes via mutation on style attribute of .org-canvas
+        const canvas = document.querySelector(".org-canvas") || document.body;
+        const mo = new MutationObserver(schedule);
+        mo.observe(canvas, { attributes: true, attributeFilter: ["style", "class"], subtree: true });
+        // Watch body class changes (tweak toggles)
+        const bodyMo = new MutationObserver(schedule);
+        bodyMo.observe(document.body, { attributes: true, attributeFilter: ["style", "class"] });
+        // Watch :root style changes
+        const rootMo = new MutationObserver(schedule);
+        rootMo.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+
+        // Initial passes
+        schedule();
+        setTimeout(schedule, 100);
+        setTimeout(schedule, 400);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+
+        // Expose for manual redraw if needed
+        window.__redrawConnectors = schedule;
+      })();
     </script>
   </body>
 </html>`;

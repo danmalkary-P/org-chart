@@ -25,37 +25,51 @@ export function renderContactPage({ contactData, context, backUrl }) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escHtml(c.name || "Contact")} — Pylon Sales Heat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #f7f7f8;
+        --bg: #ffffff;
         --surface: #ffffff;
-        --subtle: #fafafa;
-        --text: #24262b;
-        --muted: #69707d;
-        --faint: #9aa3b3;
-        --line: #e3e5ea;
-        --line-strong: #cfd5df;
-        --purple: #5b2df5;
-        --purple-soft: #f1edff;
-        --green: #147a3f;
-        --green-soft: #e8f5ed;
-        --yellow: #8a6100;
-        --yellow-soft: #fff7df;
-        --red: #b42318;
-        --red-soft: #fdeceb;
-        --blue: #0b57d0;
-        --blue-soft: #e8f0fe;
+        --surface-soft: #f7f7f8;
+        --subtle: #f7f7f8;
+        --text: #1b1b1b;
+        --text-2: #414348;
+        --muted: #5d6373;
+        --faint: #99a1b3;
+        --line: #e7e8eb;
+        --line-soft: #ecedee;
+        --line-strong: #d2d5da;
+        --primary: #5532ed;
+        --primary-hover: #4338ca;
+        --primary-soft: #eef2ff;
+        --primary-soft-2: #e0e7ff;
+        --purple: #5532ed;
+        --purple-soft: #eef2ff;
+        --green: #047857;
+        --green-soft: #d1fae5;
+        --yellow: #b45309;
+        --yellow-soft: #fde68a;
+        --red: #b91c1c;
+        --red-soft: #fee2e2;
+        --blue: #1d4ed8;
+        --blue-soft: #dbeafe;
+        --shadow-card: 0 6px 24px 0 rgba(0,0,0,0.08);
+        --ring: 0 0 0 3px rgba(85, 50, 237, 0.22);
       }
       *, *::before, *::after { box-sizing: border-box; }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--text);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        line-height: 1.45;
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
         min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
       }
-      a { color: var(--purple); text-decoration: none; }
+      a { color: var(--primary); text-decoration: none; }
       a:hover { text-decoration: underline; }
       h1, h2, h3 { margin: 0; }
       .topbar {
@@ -63,10 +77,10 @@ export function renderContactPage({ contactData, context, backUrl }) {
         background: var(--surface);
         border-bottom: 1px solid var(--line);
         display: flex;
-        gap: 16px;
+        gap: 12px;
         justify-content: space-between;
-        min-height: 61px;
-        padding: 14px 24px;
+        min-height: 48px;
+        padding: 8px 20px;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -74,7 +88,7 @@ export function renderContactPage({ contactData, context, backUrl }) {
       .topbar-left {
         align-items: center;
         display: flex;
-        gap: 14px;
+        gap: 10px;
         min-width: 0;
       }
       .back-link {
@@ -82,15 +96,16 @@ export function renderContactPage({ contactData, context, backUrl }) {
         color: var(--muted);
         display: flex;
         font-size: 13px;
-        font-weight: 650;
+        font-weight: 500;
         gap: 4px;
         white-space: nowrap;
       }
-      .back-link:hover { color: var(--text); text-decoration: none; }
+      .back-link:hover { color: var(--primary); text-decoration: none; }
       .sep { color: var(--line-strong); }
       .topbar-name {
-        font-size: 15px;
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -102,82 +117,95 @@ export function renderContactPage({ contactData, context, backUrl }) {
       }
       .btn {
         align-items: center;
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 7px;
+        border-radius: 6px;
         color: var(--text);
+        cursor: pointer;
         display: inline-flex;
         font: inherit;
         font-size: 13px;
-        font-weight: 650;
+        font-weight: 500;
         gap: 5px;
-        padding: 7px 12px;
+        padding: 6px 11px;
         text-decoration: none;
-        cursor: pointer;
-        background: var(--surface);
-        transition: filter 120ms ease;
+        transition: background-color 120ms ease, border-color 120ms ease;
       }
-      .btn:hover { filter: brightness(0.94); text-decoration: none; }
-      .btn-primary { background: var(--purple); border-color: transparent; color: white; }
+      .btn:hover { background: var(--surface-soft); text-decoration: none; }
+      .btn-primary {
+        background: var(--primary);
+        border-color: transparent;
+        color: #fff;
+      }
+      .btn-primary:hover { background: var(--primary-hover); }
       .content-shell {
         display: grid;
-        grid-template-columns: 300px 1fr;
-        min-height: calc(100vh - 61px);
+        grid-template-columns: 320px 1fr;
+        min-height: calc(100vh - 48px);
       }
       .left-col {
         background: var(--surface);
         border-right: 1px solid var(--line);
         overflow-y: auto;
-        padding: 24px 20px;
+        padding: 22px 20px;
       }
       .right-col {
+        background: var(--surface);
         overflow-y: auto;
-        padding: 24px;
+        padding: 22px 24px;
       }
       .contact-hero {
         align-items: flex-start;
         display: flex;
-        gap: 14px;
-        margin-bottom: 20px;
+        gap: 12px;
+        margin-bottom: 18px;
       }
       .avatar {
         align-items: center;
-        background: var(--purple-soft);
+        background: var(--primary-soft);
         border-radius: 50%;
-        color: var(--purple);
+        color: var(--primary);
         display: flex;
         flex-shrink: 0;
-        font-size: 22px;
-        font-weight: 800;
-        height: 56px;
+        font-size: 18px;
+        font-weight: 600;
+        height: 48px;
         justify-content: center;
-        width: 56px;
+        letter-spacing: -0.02em;
+        width: 48px;
       }
       .avatar.champion { background: var(--green-soft); color: var(--green); }
       .avatar.risk { background: var(--red-soft); color: var(--red); }
       .hero-text { min-width: 0; }
-      .hero-text h1 { font-size: 17px; font-weight: 800; margin-bottom: 2px; }
-      .hero-title { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+      .hero-text h1 {
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin-bottom: 2px;
+      }
+      .hero-title { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
       .badge-row { display: flex; flex-wrap: wrap; gap: 5px; }
       .badge {
         border-radius: 999px;
         display: inline-flex;
         font-size: 11px;
-        font-weight: 700;
-        padding: 3px 8px;
+        font-weight: 500;
+        padding: 2px 8px;
       }
       .badge-champion { background: var(--green-soft); color: var(--green); }
       .badge-risk { background: var(--red-soft); color: var(--red); }
-      .badge-decision { background: var(--blue-soft); color: var(--blue); }
-      .badge-neutral { background: #eef2f6; color: #475467; }
+      .badge-decision { background: var(--primary-soft); color: var(--primary); }
+      .badge-neutral { background: var(--surface-soft); color: var(--text-2); }
       .badge-research { background: var(--yellow-soft); color: var(--yellow); }
-      .section-divider { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+      .section-divider { border: none; border-top: 1px solid var(--line-soft); margin: 18px 0; }
       .section-label {
-        color: var(--faint);
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.07em;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0;
         margin-bottom: 10px;
-        text-transform: uppercase;
+        text-transform: none;
       }
       .field-list { display: grid; gap: 7px; }
       .field-row {
@@ -187,45 +215,63 @@ export function renderContactPage({ contactData, context, backUrl }) {
       }
       .field-label { color: var(--muted); font-size: 12px; padding-top: 1px; }
       .field-value { color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
-      .field-value a { color: var(--purple); }
+      .field-value a { color: var(--primary); font-weight: 500; }
       .account-chip {
-        background: var(--subtle);
+        background: var(--surface-soft);
         border: 1px solid var(--line);
         border-radius: 8px;
         margin-bottom: 18px;
         padding: 12px;
       }
-      .account-chip-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+      .account-chip-name {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        margin-bottom: 8px;
+      }
       .account-chip-metrics {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
       }
       .metric-pill {
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: 6px;
+        color: var(--muted);
         font-size: 11px;
         padding: 4px 8px;
       }
-      .metric-pill strong { display: block; font-size: 13px; font-weight: 800; }
-      .right-col h2 {
-        font-size: 15px;
-        font-weight: 700;
-        margin-bottom: 12px;
+      .metric-pill strong {
+        color: var(--text);
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
       }
-      .right-section { margin-bottom: 28px; }
+      .right-col h2 {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        margin-bottom: 10px;
+      }
+      .right-section { margin-bottom: 24px; }
       .issue-card {
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: 8px;
-        margin-bottom: 8px;
-        padding: 12px 14px;
-        text-decoration: none;
         display: block;
-        transition: border-color 120ms ease;
+        margin-bottom: 8px;
+        padding: 11px 13px;
+        text-decoration: none;
+        transition: border-color 120ms ease, background-color 120ms ease;
       }
-      .issue-card:hover { border-color: var(--purple); }
+      .issue-card:hover {
+        background: var(--surface-soft);
+        border-color: var(--line-strong);
+        text-decoration: none;
+      }
       .issue-card-top {
         align-items: center;
         display: flex;
@@ -233,21 +279,30 @@ export function renderContactPage({ contactData, context, backUrl }) {
         justify-content: space-between;
         margin-bottom: 4px;
       }
-      .issue-number { color: var(--faint); font-size: 11px; font-weight: 700; }
-      .issue-title { color: var(--text); font-size: 13px; font-weight: 650; }
+      .issue-number {
+        color: var(--muted);
+        font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .issue-title {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 500;
+      }
       .issue-meta { color: var(--muted); font-size: 12px; }
       .state-badge {
         border-radius: 999px;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 500;
         padding: 2px 7px;
         white-space: nowrap;
       }
-      .state-waiting_on_you { background: #fef3c7; color: #92400e; }
-      .state-waiting_on_customer { background: #e0f2fe; color: #075985; }
-      .state-new { background: #f0fdf4; color: #166534; }
-      .state-closed { background: #f3f4f6; color: #6b7280; }
-      .state-on_hold { background: #faf5ff; color: #6b21a8; }
+      .state-waiting_on_you { background: var(--yellow-soft); color: var(--yellow); }
+      .state-waiting_on_customer { background: var(--blue-soft); color: var(--blue); }
+      .state-new { background: var(--green-soft); color: var(--green); }
+      .state-closed { background: var(--surface-soft); color: var(--muted); }
+      .state-on_hold { background: var(--primary-soft); color: var(--primary); }
       .priority-high { color: var(--red); }
       .priority-medium { color: var(--yellow); }
       .priority-low { color: var(--muted); }
@@ -259,7 +314,8 @@ export function renderContactPage({ contactData, context, backUrl }) {
         padding: 12px 14px;
       }
       .message-item.internal {
-        border-left: 3px solid var(--purple);
+        background: var(--primary-soft);
+        border-color: var(--primary-soft-2);
       }
       .message-header {
         align-items: center;
@@ -267,22 +323,29 @@ export function renderContactPage({ contactData, context, backUrl }) {
         gap: 8px;
         margin-bottom: 5px;
       }
-      .message-author { font-size: 12px; font-weight: 700; }
-      .message-time { color: var(--faint); font-size: 11px; }
-      .message-internal-tag {
-        background: var(--purple-soft);
-        border-radius: 4px;
-        color: var(--purple);
-        font-size: 10px;
-        font-weight: 700;
-        padding: 1px 5px;
+      .message-author {
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
       }
-      .message-body { color: var(--text); font-size: 13px; line-height: 1.5; }
+      .message-time { color: var(--muted); font-size: 11px; }
+      .message-internal-tag {
+        background: var(--primary);
+        border-radius: 4px;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        text-transform: uppercase;
+      }
+      .message-body { color: var(--text-2); font-size: 13px; line-height: 1.55; }
       .notes-textarea {
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: 8px;
         font: inherit;
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
         font-size: 13px;
         min-height: 120px;
         padding: 10px 12px;
@@ -290,14 +353,13 @@ export function renderContactPage({ contactData, context, backUrl }) {
         width: 100%;
       }
       .notes-textarea:focus {
-        border-color: var(--purple);
-        box-shadow: 0 0 0 3px var(--purple-soft);
+        border-color: var(--primary);
+        box-shadow: var(--ring);
         outline: none;
       }
       .empty-state {
-        color: var(--faint);
+        color: var(--muted);
         font-size: 13px;
-        font-style: italic;
         padding: 8px 0;
       }
       @media (max-width: 860px) {

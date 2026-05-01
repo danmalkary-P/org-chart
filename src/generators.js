@@ -468,7 +468,7 @@ function relationshipScore(relationship, owner) {
 
 function buildNodeNotes({ contact, relatedIssues }) {
   const notes = [];
-  if (contact.customFields?.sentiment) notes.push(`Sentiment: ${contact.customFields.sentiment}.`);
+  // Sentiment now surfaces as its own AI pill in the sidebar — keep it out of free-text notes.
   if (contact.customFields?.buying_role) notes.push(`Buying role: ${contact.customFields.buying_role}.`);
   if (relatedIssues[0]) notes.push(`Recent issue: ${relatedIssues[0].title}.`);
   return notes.join(" ");
