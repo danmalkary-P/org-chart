@@ -4,7 +4,7 @@ export function loadConfig(env = process.env) {
   return {
     port: Number.isFinite(port) ? port : 3000,
     publicBaseUrl: trimTrailingSlash(env.PUBLIC_BASE_URL || ""),
-    demoMode: env.DEMO_MODE === "live" ? "live" : "mock",
+    demoMode: env.DEMO_MODE === "mock" ? "mock" : (env.PYLON_API_TOKEN ? "live" : "mock"),
     pylonApiBase: trimTrailingSlash(env.PYLON_API_BASE || "https://api.usepylon.com"),
     pylonApiToken: env.PYLON_API_TOKEN || "",
     openAiApiKey: env.OPENAI_API_KEY || ""

@@ -258,6 +258,46 @@ const mockContexts = {
       ],
       linkedinPeople: [],
       systemWarnings: []
+    },
+    opportunities: [
+      {
+        id: "opp_renewal_001",
+        name: "Acme Robotics Enterprise Renewal",
+        type: "renewal",
+        stage: "Mutual evaluation",
+        amount: 148000,
+        closeDate: "2026-06-30",
+        health: "at_risk",
+        products: ["Enterprise Seat", "AI Agents"],
+        owner: { name: "Dana Lee", email: "dana@yourcompany.com" },
+        notes: "SSO blocker (issue #4182) and export schema (issue #4169) must be resolved before renewal negotiation.",
+        nextSteps: "Resolve SSO ACS URL + deliver export schema, then negotiate renewal terms with Mia."
+      },
+      {
+        id: "opp_expansion_001",
+        name: "Operations Seat Expansion",
+        type: "expansion",
+        stage: "Discovery",
+        amount: 43200,
+        closeDate: "2026-07-15",
+        health: "conditional",
+        products: ["Enterprise Seat"],
+        owner: { name: "Dana Lee", email: "dana@yourcompany.com" },
+        notes: "Jordan Avery (VP Ops) mentioned interest in 120 additional seats for field operations rollout.",
+        nextSteps: "Confirm seat count with Mia once technical blockers are resolved."
+      }
+    ],
+    accountMetrics: {
+      currentArr: 148000,
+      renewalDate: "2026-06-30",
+      healthScore: 6.2,
+      sentiment: "at_risk",
+      lifecycle: "Middle",
+      seatCount: 45,
+      seatTier: "Enterprise",
+      products: ["Enterprise Seat", "AI Agents"],
+      upsellSignals: ["Operations seat expansion (120 seats)", "AI Assistants interest"],
+      riskSignals: ["SSO blocker open (issue #4182)", "Export schema pending for expansion decision"]
     }
   },
   "quiet-bank": {
@@ -318,6 +358,33 @@ const mockContexts = {
       callActivities: [],
       linkedinPeople: [],
       systemWarnings: []
+    },
+    opportunities: [
+      {
+        id: "opp_new_001",
+        name: "Quiet Bank Pilot",
+        type: "new_business",
+        stage: "Discovery",
+        amount: 22000,
+        closeDate: "2026-07-01",
+        health: "neutral",
+        products: ["Professional Seat"],
+        owner: { name: "Alex Morgan", email: "alex@yourcompany.com" },
+        notes: "Early stage pilot — confirming fit and success criteria.",
+        nextSteps: "Confirm goals, timeline, and success criteria on May 6 call."
+      }
+    ],
+    accountMetrics: {
+      currentArr: 0,
+      renewalDate: null,
+      healthScore: null,
+      sentiment: "neutral",
+      lifecycle: "Discovery",
+      seatCount: 0,
+      seatTier: "",
+      products: [],
+      upsellSignals: ["Onboarding more support managers (calendar signal)"],
+      riskSignals: []
     }
   }
 };

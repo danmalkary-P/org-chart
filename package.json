@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node src/server.js",
-    "dev": "DEMO_MODE=mock node src/server.js",
+    "dev": "node --env-file=.env src/server.js",
     "test": "node --test"
   },
   "engines": {

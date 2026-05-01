@@ -1,7 +1,9 @@
-export function renderOrgMapPreview({ analysis }) {
+export function renderOrgMapPreview({ analysis, context = {} }) {
   const peopleJson = JSON.stringify(analysis.nodes).replace(/</g, "\\u003c");
   const suggestedRootsJson = JSON.stringify(suggestedRootIds(analysis.nodes)).replace(/</g, "\\u003c");
   const accountIdJson = JSON.stringify(analysis.accountId || "").replace(/</g, "\\u003c");
+  const opportunitiesJson = JSON.stringify(context.opportunities || []).replace(/</g, "\\u003c");
+  const accountMetricsJson = JSON.stringify(context.accountMetrics || {}).replace(/</g, "\\u003c");
 
   return `<!doctype html>
 <html lang="en">
@@ -48,7 +50,7 @@ export function renderOrgMapPreview({ analysis }) {
         text-decoration: none;
       }
       .primary {
-        background: var(--purple);
+        background: #222;
         color: white;
       }
       .secondary {
@@ -61,8 +63,16 @@ export function renderOrgMapPreview({ analysis }) {
       }
       .app-shell {
         display: grid;
-        grid-template-columns: 54px 270px minmax(560px, 1fr) 350px;
+        grid-template-columns: 54px 270px minmax(560px, 1fr) 350px 0px;
         min-height: 100vh;
+        transition: grid-template-columns 200ms ease;
+      }
+      .app-shell.notes-open {
+        grid-template-columns: 54px 270px minmax(360px, 1fr) 0px 430px;
+      }
+      .app-shell.notes-open .contacts-panel {
+        overflow: hidden;
+        padding: 0;
       }
       .rail {
         align-items: center;
@@ -85,32 +95,195 @@ export function renderOrgMapPreview({ analysis }) {
         width: 32px;
       }
       .rail-dot.active {
-        background: var(--purple-soft);
-        color: var(--purple);
+        background: #e8e8e8;
+        color: #222;
       }
       .account-nav {
         background: #f4f4f6;
         border-right: 1px solid var(--line);
-        padding: 26px 22px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 20px 16px;
       }
       .back {
         color: #667085;
         font-size: 14px;
         font-weight: 650;
-        margin-bottom: 26px;
+        margin-bottom: 16px;
+      }
+      .account-summary-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        margin-bottom: 16px;
+        padding: 12px;
+      }
+      .account-summary-name {
+        font-size: 13px;
+        font-weight: 750;
+        margin-bottom: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .account-summary-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .summary-metric {
+        background: #f4f4f6;
+        border-radius: 5px;
+        font-size: 11px;
+        padding: 3px 7px;
+      }
+      .summary-metric strong { display: block; font-size: 13px; font-weight: 800; line-height: 1.2; }
+      .summary-renewal {
+        color: var(--muted);
+        font-size: 11px;
       }
       .nav-list {
         display: grid;
-        gap: 4px;
+        gap: 2px;
+        margin-bottom: 14px;
       }
       .nav-item {
         border-radius: 7px;
         color: #25272d;
-        padding: 9px 10px;
+        font-size: 13px;
+        padding: 7px 10px;
       }
       .nav-item.active {
-        color: var(--purple);
+        color: var(--text);
+        font-weight: 700;
       }
+      .nav-section-label {
+        color: var(--faint);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+        padding: 0 2px;
+        text-transform: uppercase;
+      }
+      .opp-list { display: grid; gap: 7px; }
+      .opp-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        cursor: pointer;
+        padding: 10px 11px;
+        text-align: left;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+        width: 100%;
+      }
+      .opp-card:hover {
+        border-color: #888;
+        box-shadow: 0 0 0 2px #eee;
+      }
+      .opp-card.active {
+        border-color: #555;
+        box-shadow: 0 0 0 2px #eee;
+      }
+      .opp-card-name {
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.3;
+        margin-bottom: 3px;
+      }
+      .opp-card-meta {
+        color: var(--muted);
+        font-size: 11px;
+        margin-bottom: 5px;
+      }
+      .opp-health {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+      }
+      .opp-health.at_risk { background: #e8e8e8; color: #333; }
+      .opp-health.conditional { background: #e8e8e8; color: #333; }
+      .opp-health.neutral { background: #eef2f6; color: #475467; }
+      .opp-panel {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        bottom: 0;
+        box-shadow: 4px 0 20px rgba(20, 24, 32, 0.08);
+        left: 54px;
+        overflow-y: auto;
+        padding: 20px 18px;
+        position: fixed;
+        top: 0;
+        transform: translateX(-110%);
+        transition: transform 180ms ease;
+        width: 300px;
+        z-index: 25;
+      }
+      .opp-panel.open { transform: translateX(0); }
+      .opp-panel-head {
+        align-items: start;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .opp-panel-head h2 { font-size: 15px; }
+      .opp-panel-close {
+        align-items: center;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        flex-shrink: 0;
+        font-size: 16px;
+        height: 28px;
+        justify-content: center;
+        padding: 0;
+        width: 28px;
+      }
+      .opp-panel-close:hover { background: #f2f3f5; color: var(--text); }
+      .opp-type-badge {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 8px;
+        margin-bottom: 12px;
+      }
+      .opp-type-renewal, .opp-type-expansion, .opp-type-new_business { background: #ebebeb; color: #333; }
+      .opp-field-list { display: grid; gap: 8px; margin-bottom: 14px; }
+      .opp-field-row { display: grid; gap: 4px; grid-template-columns: 80px minmax(0,1fr); }
+      .opp-field-label { color: var(--muted); font-size: 11px; padding-top: 1px; }
+      .opp-field-value { font-size: 12px; overflow-wrap: anywhere; }
+      .opp-text-block {
+        background: #f9f9fb;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        font-size: 12px;
+        line-height: 1.55;
+        padding: 10px;
+      }
+      .opp-text-label {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+      .view-profile-btn {
+        color: #333;
+        font-size: 12px;
+        font-weight: 650;
+        text-decoration: none;
+      }
+      .view-profile-btn:hover { text-decoration: underline; }
       .workspace {
         background: var(--surface);
         min-width: 0;
@@ -209,8 +382,7 @@ export function renderOrgMapPreview({ analysis }) {
         margin-top: 2px;
       }
       .map-panel {
-        background:
-          linear-gradient(158deg, rgba(232, 247, 250, 0.9) 0 34%, rgba(255, 255, 255, 0.95) 34% 63%, rgba(253, 244, 250, 0.92) 63% 100%);
+        background: #fafafa;
         border: 1px solid var(--line);
         border-radius: 9px;
         min-height: 560px;
@@ -230,9 +402,37 @@ export function renderOrgMapPreview({ analysis }) {
         padding: 12px;
         text-align: center;
       }
-      .drop-zone.drag-over, .profile-card.drag-over {
-        background: var(--purple-soft);
-        border-color: var(--purple);
+      .drop-zone.drag-over {
+        background: #f0f0f0;
+        border-color: #888;
+      }
+      .profile-card.drag-over {
+        background: #f0f0f0;
+        border-color: #888;
+      }
+      .profile-card.drop-before::before {
+        background: #222;
+        border-radius: 2px;
+        content: "";
+        height: 3px;
+        left: 4px;
+        pointer-events: none;
+        position: absolute;
+        right: 4px;
+        top: -2px;
+        z-index: 10;
+      }
+      .profile-card.drop-after::after {
+        background: #222;
+        border-radius: 2px;
+        bottom: -2px;
+        content: "";
+        height: 3px;
+        left: 4px;
+        pointer-events: none;
+        position: absolute;
+        right: 4px;
+        z-index: 10;
       }
       .tree {
         align-items: flex-start;
@@ -270,8 +470,7 @@ export function renderOrgMapPreview({ analysis }) {
         transform: translateY(-2px);
       }
       .profile-card.active .profile-photo {
-        filter: saturate(1.15);
-        outline: 3px solid var(--purple-soft);
+        outline: 3px solid #ccc;
         outline-offset: 3px;
       }
       .profile-card.dragging {
@@ -287,9 +486,9 @@ export function renderOrgMapPreview({ analysis }) {
       }
       .profile-photo {
         align-items: center;
-        background: #ffffff;
+        background: #f5f5f5;
         clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
-        color: var(--purple);
+        color: #333;
         display: flex;
         font-size: 21px;
         font-weight: 850;
@@ -297,13 +496,8 @@ export function renderOrgMapPreview({ analysis }) {
         justify-content: center;
         position: relative;
         width: 86px;
-        box-shadow: inset 0 0 0 3px currentColor, 0 4px 10px rgba(35, 39, 47, 0.08);
+        box-shadow: inset 0 0 0 3px #bbb, 0 4px 10px rgba(35, 39, 47, 0.08);
       }
-      .profile-photo.champion { color: #188052; background: #f6fffb; }
-      .profile-photo.risk { color: #8a1242; background: #fff7fb; }
-      .profile-photo.decision { color: #20224f; background: #f8f8ff; }
-      .profile-photo.research { color: #d1a611; background: #fffdf1; }
-      .profile-photo.neutral { color: #7a8290; background: #fbfcfd; }
       .star-marker {
         align-items: center;
         background: #f4d83f;
@@ -322,10 +516,11 @@ export function renderOrgMapPreview({ analysis }) {
         display: block;
       }
       .title-chip {
-        background: #f4f2ff;
-        border: 1px solid #ded7ff;
+        background: #f0f0f0;
+        border: 1px solid #d0d0d0;
         border-radius: 999px;
-        color: #4424b8;
+        color: #333;
+        cursor: text;
         display: block;
         font-size: 10px;
         line-height: 1.15;
@@ -337,7 +532,21 @@ export function renderOrgMapPreview({ analysis }) {
         white-space: nowrap;
       }
       .title-chip:hover {
-        border-color: var(--purple);
+        border-color: #888;
+        background: #e8e8e8;
+      }
+      .title-chip-input {
+        background: #fff;
+        border: 1px solid #888;
+        border-radius: 999px;
+        color: #111;
+        font: inherit;
+        font-size: 10px;
+        max-width: 104px;
+        outline: none;
+        padding: 3px 7px;
+        text-align: center;
+        width: 104px;
       }
       .profile-name {
         font-size: 11px;
@@ -364,11 +573,7 @@ export function renderOrgMapPreview({ analysis }) {
         font-weight: 800;
         padding: 3px 7px;
       }
-      .champion { background: #e8f5ed; color: var(--green); }
-      .risk { background: #fdeceb; color: var(--red); }
-      .decision { background: #e8f0fe; color: var(--blue); }
-      .research { background: #fff7df; color: var(--yellow); }
-      .neutral { background: #eef2f6; color: #475467; }
+      .champion, .risk, .decision, .research, .neutral { background: #eef2f6; color: #475467; }
       .profile-note {
         display: none;
         color: var(--muted);
@@ -459,7 +664,7 @@ export function renderOrgMapPreview({ analysis }) {
         border: 1px solid var(--line);
         border-radius: 12px;
         box-shadow: 0 10px 28px rgba(20, 24, 32, 0.14);
-        color: var(--purple);
+        color: #333;
         left: -1000px;
         padding: 7px;
         pointer-events: none;
@@ -469,11 +674,6 @@ export function renderOrgMapPreview({ analysis }) {
         width: 104px;
         z-index: 1000;
       }
-      .drag-preview.champion { color: #188052; }
-      .drag-preview.risk { color: #8a1242; }
-      .drag-preview.decision { color: #20224f; }
-      .drag-preview.research { color: #d1a611; }
-      .drag-preview.neutral { color: #7a8290; }
       .drag-preview-photo {
         align-items: center;
         background: #ffffff;
@@ -528,7 +728,35 @@ export function renderOrgMapPreview({ analysis }) {
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 14px;
+        margin-bottom: 10px;
+      }
+      .add-contact-form {
+        background: #f7f7f8;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        display: none;
+        gap: 7px;
+        margin-bottom: 12px;
+        padding: 10px;
+      }
+      .add-contact-form.open { display: grid; }
+      .add-contact-form input {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font: inherit;
+        font-size: 12px;
+        padding: 6px 8px;
+        width: 100%;
+      }
+      .add-contact-form input:focus { border-color: #888; outline: none; }
+      .add-contact-form-actions {
+        display: flex;
+        gap: 6px;
+      }
+      .add-contact-form-actions button {
+        flex: 1;
+        font-size: 12px;
+        padding: 6px 8px;
       }
       .contact-list {
         display: grid;
@@ -546,11 +774,11 @@ export function renderOrgMapPreview({ analysis }) {
         transition: opacity 160ms ease, filter 160ms ease, border-color 160ms ease;
       }
       .contact-chip:hover {
-        border-color: var(--line-strong);
+        border-color: #888;
       }
       .contact-chip.active {
-        border-color: var(--purple);
-        box-shadow: 0 0 0 2px var(--purple-soft);
+        border-color: #555;
+        box-shadow: 0 0 0 2px #eee;
       }
       .contact-chip[aria-disabled="true"] {
         cursor: pointer;
@@ -575,19 +803,20 @@ export function renderOrgMapPreview({ analysis }) {
       .notes-panel {
         background: var(--surface);
         border-left: 1px solid var(--line);
-        bottom: 0;
-        box-shadow: -12px 0 30px rgba(20, 24, 32, 0.08);
-        padding: 18px;
-        position: fixed;
-        right: 0;
-        top: 0;
-        transform: translateX(104%);
-        transition: transform 180ms ease;
-        width: min(430px, 92vw);
-        z-index: 20;
+        min-width: 0;
+        opacity: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease, padding 200ms ease;
+        visibility: hidden;
       }
       .notes-panel.open {
-        transform: translateX(0);
+        opacity: 1;
+        padding: 18px;
+        pointer-events: auto;
+        visibility: visible;
       }
       .notes-panel textarea {
         border: 1px solid var(--line);
@@ -654,7 +883,8 @@ export function renderOrgMapPreview({ analysis }) {
         overflow-wrap: anywhere;
       }
       .field-row a {
-        color: var(--purple);
+        color: #333;
+        text-decoration: underline;
       }
       .mini-list {
         display: grid;
@@ -680,7 +910,10 @@ export function renderOrgMapPreview({ analysis }) {
       }
       @media (max-width: 1120px) {
         .app-shell {
-          grid-template-columns: 54px minmax(0, 1fr) 330px;
+          grid-template-columns: 54px minmax(0, 1fr) 330px 0px;
+        }
+        .app-shell.notes-open {
+          grid-template-columns: 54px minmax(0, 1fr) 0px 380px;
         }
         .account-nav {
           display: none;
@@ -743,15 +976,30 @@ export function renderOrgMapPreview({ analysis }) {
       </aside>
       <aside class="account-nav" aria-label="Account navigation">
         <div class="back">← Accounts</div>
+        <div class="account-summary-card" id="account-summary-card">
+          <div class="account-summary-name">${escapeHtml(analysis.accountName)}</div>
+          <div class="account-summary-metrics" id="account-summary-metrics">
+            <div class="summary-metric"><strong id="summary-arr">—</strong>ARR</div>
+            <div class="summary-metric"><strong id="summary-health">—</strong>Health</div>
+          </div>
+          <div class="summary-renewal" id="summary-renewal"></div>
+        </div>
         <div class="nav-list">
           <div class="nav-item">Overview</div>
           <div class="nav-item">Issues</div>
           <div class="nav-item active">Org Chart Mapper</div>
           <div class="nav-item">Contacts</div>
-          <div class="nav-item">Opportunities</div>
-          <div class="nav-item">Meetings</div>
-          <div class="nav-item">Activity</div>
         </div>
+        <div class="nav-section-label">Opportunities</div>
+        <div class="opp-list" id="opp-list"></div>
+      </aside>
+
+      <aside id="opp-panel" class="opp-panel" aria-label="Opportunity details">
+        <div class="opp-panel-head">
+          <h2 id="opp-panel-name">Opportunity</h2>
+          <button type="button" class="opp-panel-close" id="close-opp" title="Close">×</button>
+        </div>
+        <div id="opp-panel-content"></div>
       </aside>
       <section class="workspace">
         <header class="topbar">
@@ -805,18 +1053,27 @@ export function renderOrgMapPreview({ analysis }) {
           <div class="contacts-head">
             <div>
               <h2>Contacts</h2>
-              <div class="muted"><span id="placed-count">0</span> of ${analysis.nodes.length} in map</div>
+              <div class="muted"><span id="placed-count">0</span> of <span id="total-count">${analysis.nodes.length}</span> in map</div>
+            </div>
+            <button type="button" class="secondary" id="add-contact-btn" style="font-size:11px;padding:5px 8px;flex-shrink:0;">+ Add</button>
+          </div>
+          <div id="add-contact-form" class="add-contact-form">
+            <input id="new-contact-name" type="text" placeholder="Full name" autocomplete="off">
+            <input id="new-contact-title" type="text" placeholder="Title / role" autocomplete="off">
+            <div class="add-contact-form-actions">
+              <button type="button" class="primary" id="save-new-contact">Add contact</button>
+              <button type="button" class="secondary" id="cancel-new-contact">Cancel</button>
             </div>
           </div>
           <div id="people-list" class="contact-list"></div>
         </div>
       </aside>
-    </div>
-    <aside id="notes-panel" class="notes-panel" aria-label="Contact details and notes">
+      <aside id="notes-panel" class="notes-panel" aria-label="Contact details and notes">
       <div class="notes-head">
         <div>
           <h2 id="notes-name">Contact details</h2>
           <div id="notes-title" class="muted"></div>
+          <a id="view-profile-link" href="#" target="_blank" class="view-profile-btn" style="display:none;">View full profile →</a>
         </div>
         <button type="button" class="ghost" id="close-notes" title="Close (Esc)">×</button>
       </div>
@@ -827,22 +1084,122 @@ export function renderOrgMapPreview({ analysis }) {
       <div class="actions" style="margin-top: 12px;">
         <button type="button" class="primary" id="save-notes">Save notes</button>
       </div>
-    </aside>
+      </aside>
+    </div>
 
     <script>
       const people = ${peopleJson};
       const suggestedRoots = ${suggestedRootsJson};
       const accountId = ${accountIdJson};
+      const opportunities = ${opportunitiesJson};
+      const accountMetrics = ${accountMetricsJson};
+      const opportunitiesById = new Map(opportunities.map((o) => [o.id, o]));
       const peopleById = new Map(people.map((person) => [person.id, person]));
       const contactDetailCache = new Map();
       const state = {
         roots: [],
         childrenById: {},
         draggingId: null,
+        draggingFromTree: false,
         activeNoteId: null,
-        notesById: Object.fromEntries(people.map((person) => [person.id, person.notes || ""]))
+        notesById: Object.fromEntries(people.map((person) => [person.id, person.notes || ""])),
+        customTitles: {},
+        customNames: {}
       };
 
+      // Account summary + opportunity sidebar
+      const viewProfileLink = document.querySelector("#view-profile-link");
+      const summaryArr = document.querySelector("#summary-arr");
+      const summaryHealth = document.querySelector("#summary-health");
+      const summaryRenewal = document.querySelector("#summary-renewal");
+      const oppList = document.querySelector("#opp-list");
+      const oppPanel = document.querySelector("#opp-panel");
+      const oppPanelName = document.querySelector("#opp-panel-name");
+      const oppPanelContent = document.querySelector("#opp-panel-content");
+
+      if (summaryArr && accountMetrics.currentArr) {
+        summaryArr.textContent = formatCurrency(accountMetrics.currentArr);
+      }
+      if (summaryHealth && accountMetrics.healthScore != null) {
+        summaryHealth.textContent = \`\${accountMetrics.healthScore}/10\`;
+      }
+      if (summaryRenewal && accountMetrics.renewalDate) {
+        summaryRenewal.textContent = \`Renewal: \${formatDate(accountMetrics.renewalDate)}\`;
+      }
+
+      if (oppList) {
+        if (opportunities.length) {
+          oppList.innerHTML = opportunities.map((opp) => \`
+            <button type="button" class="opp-card" data-opp-id="\${escapeAttr(opp.id)}">
+              <div class="opp-card-name">\${escapeHtml(opp.name)}</div>
+              <div class="opp-card-meta">\${opp.amount ? formatCurrency(opp.amount) + " · " : ""}\${escapeHtml(opp.stage || "")}</div>
+              <span class="opp-health \${escapeAttr(opp.health || "neutral")}">\${escapeHtml(oppHealthLabel(opp.health))}</span>
+            </button>
+          \`).join("");
+          oppList.querySelectorAll(".opp-card").forEach((card) => {
+            card.addEventListener("click", () => openOpportunity(card.dataset.oppId));
+          });
+        } else {
+          oppList.innerHTML = '<div style="color:var(--faint);font-size:12px;padding:4px 2px;">No open opportunities</div>';
+        }
+      }
+
+      document.querySelector("#close-opp")?.addEventListener("click", closeOpportunity);
+
+      function openOpportunity(id) {
+        const opp = opportunitiesById.get(id);
+        if (!opp) return;
+        document.querySelectorAll(".opp-card").forEach((c) => c.classList.remove("active"));
+        document.querySelector(\`.opp-card[data-opp-id="\${cssEscape(id)}"]\`)?.classList.add("active");
+        oppPanelName.textContent = opp.name;
+        oppPanelContent.innerHTML = renderOppDetail(opp);
+        oppPanel.classList.add("open");
+      }
+
+      function closeOpportunity() {
+        document.querySelectorAll(".opp-card").forEach((c) => c.classList.remove("active"));
+        oppPanel.classList.remove("open");
+      }
+
+      function renderOppDetail(opp) {
+        const typeLabels = { renewal: "Renewal", expansion: "Expansion", new_business: "New Business" };
+        return \`
+          <span class="opp-type-badge opp-type-\${escapeAttr(opp.type || "")}">\${escapeHtml(typeLabels[opp.type] || opp.type || "Opportunity")}</span>
+          <div class="opp-field-list">
+            \${oppFieldRow("Stage", opp.stage)}
+            \${oppFieldRow("Amount", opp.amount ? formatCurrency(opp.amount) : null)}
+            \${oppFieldRow("Close date", opp.closeDate ? formatDate(opp.closeDate) : null)}
+            \${oppFieldRow("Health", oppHealthLabel(opp.health))}
+            \${oppFieldRow("Owner", opp.owner?.name)}
+            \${opp.products?.length ? oppFieldRow("Products", opp.products.join(", ")) : ""}
+          </div>
+          \${opp.nextSteps ? \`<div class="opp-text-label">Next steps</div><div class="opp-text-block">\${escapeHtml(opp.nextSteps)}</div><br>\` : ""}
+          \${opp.notes ? \`<div class="opp-text-label">Notes</div><div class="opp-text-block">\${escapeHtml(opp.notes)}</div>\` : ""}
+        \`;
+      }
+
+      function oppFieldRow(label, value) {
+        if (!value) return "";
+        return \`<div class="opp-field-row"><span class="opp-field-label">\${escapeHtml(label)}</span><span class="opp-field-value">\${escapeHtml(value)}</span></div>\`;
+      }
+
+      function oppHealthLabel(health) {
+        return { at_risk: "At risk", conditional: "Conditional", neutral: "On track" }[health] || "Unknown";
+      }
+
+      function formatCurrency(n) {
+        n = Number(n);
+        if (n >= 1_000_000) return \`$\${(n / 1_000_000).toFixed(1)}M\`;
+        if (n >= 1000) return \`$\${Math.round(n / 1000)}k\`;
+        return \`$\${n}\`;
+      }
+
+      function formatDate(iso) {
+        try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
+        catch { return iso; }
+      }
+
+      const appShell = document.querySelector(".app-shell");
       const peopleList = document.querySelector("#people-list");
       const orgTree = document.querySelector("#org-tree");
       const rootDrop = document.querySelector("#root-drop");
@@ -872,6 +1229,34 @@ export function renderOrgMapPreview({ analysis }) {
         state.notesById[state.activeNoteId] = notesInput.value;
         render();
         closeNotes();
+      });
+
+      const addContactForm = document.querySelector("#add-contact-form");
+      document.querySelector("#add-contact-btn").addEventListener("click", () => {
+        addContactForm.classList.toggle("open");
+        if (addContactForm.classList.contains("open")) {
+          document.querySelector("#new-contact-name").focus();
+        }
+      });
+      document.querySelector("#cancel-new-contact").addEventListener("click", () => {
+        addContactForm.classList.remove("open");
+        document.querySelector("#new-contact-name").value = "";
+        document.querySelector("#new-contact-title").value = "";
+      });
+      document.querySelector("#save-new-contact").addEventListener("click", () => {
+        const name = document.querySelector("#new-contact-name").value.trim();
+        const title = document.querySelector("#new-contact-title").value.trim();
+        if (!name) { document.querySelector("#new-contact-name").focus(); return; }
+        addCustomContact(name, title || "—");
+        document.querySelector("#new-contact-name").value = "";
+        document.querySelector("#new-contact-title").value = "";
+        addContactForm.classList.remove("open");
+      });
+      document.querySelector("#new-contact-name").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.querySelector("#new-contact-title").focus();
+      });
+      document.querySelector("#new-contact-title").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.querySelector("#save-new-contact").click();
       });
 
       rootDrop.addEventListener("dragover", allowDrop);
@@ -918,19 +1303,33 @@ export function renderOrgMapPreview({ analysis }) {
           });
           card.addEventListener("dragstart", (event) => startDrag(event, card.dataset.personId));
           card.addEventListener("dragend", endDrag);
-          card.addEventListener("dragover", allowDrop);
+          card.addEventListener("dragover", (event) => {
+            allowDrop(event);
+            const rect = card.getBoundingClientRect();
+            const isTop = event.clientY < rect.top + rect.height / 2;
+            card.classList.toggle("drop-before", isTop);
+            card.classList.toggle("drop-after", !isTop);
+          });
           card.addEventListener("dragenter", () => card.classList.add("drag-over"));
           card.addEventListener("dragleave", (event) => {
-            if (!card.contains(event.relatedTarget)) card.classList.remove("drag-over");
+            if (!card.contains(event.relatedTarget)) {
+              card.classList.remove("drag-over", "drop-before", "drop-after");
+            }
           });
           card.addEventListener("drop", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            card.classList.remove("drag-over");
+            const isTop = card.classList.contains("drop-before");
+            card.classList.remove("drag-over", "drop-before", "drop-after");
             const id = readDraggedId(event);
-            const parentId = card.dataset.personId;
-            if (id && id !== parentId && !isDescendant(parentId, id)) {
-              placeUnder(id, parentId);
+            const targetId = card.dataset.personId;
+            if (!id || id === targetId) return;
+            if (state.draggingFromTree) {
+              if (!isDescendant(targetId, id)) {
+                insertRelativeTo(id, targetId, isTop ? "before" : "after");
+              }
+            } else if (!isDescendant(targetId, id)) {
+              placeUnder(id, targetId);
             }
           });
         });
@@ -944,7 +1343,13 @@ export function renderOrgMapPreview({ analysis }) {
         orgTree.querySelectorAll(".title-chip").forEach((chip) => {
           chip.addEventListener("click", (event) => {
             event.stopPropagation();
-            openContactDetails(chip.dataset.personId);
+            startTitleEdit(chip);
+          });
+        });
+        orgTree.querySelectorAll(".profile-name[data-person-id]").forEach((nameEl) => {
+          nameEl.addEventListener("click", (event) => {
+            event.stopPropagation();
+            startNameEdit(nameEl);
           });
         });
       }
@@ -969,25 +1374,26 @@ export function renderOrgMapPreview({ analysis }) {
         const children = state.childrenById[id] || [];
         const note = state.notesById[id] || person.ownerReason || "";
         const isKey = ["Champion / coach", "Decision maker", "Research lead"].includes(person.relationship);
+        const displayTitle = state.customTitles[id] || person.title;
+        const displayName = state.customNames[id] || person.name;
         return \`<div class="tree-node \${children.length ? "has-children" : ""}">
-        <article class="profile-card \${isKey ? "is-key" : ""}" draggable="true" data-person-id="\${escapeAttr(id)}">
+        <article class="profile-card \${isKey ? "is-key" : ""}" draggable="true" data-person-id="\${escapeAttr(id)}" data-in-tree="1">
           <div class="star-marker" aria-hidden="true"></div>
           <div class="profile-main">
-            <div class="profile-photo \${relationshipClass(person.relationship)}">\${initials(person.name)}</div>
-            <button type="button" draggable="false" class="title-chip" data-person-id="\${escapeAttr(id)}" title="Add notes for \${escapeAttr(person.name)}">\${escapeHtml(person.title)}</button>
+            <div class="profile-photo">\${initials(displayName)}</div>
+            <button type="button" draggable="false" class="title-chip" data-person-id="\${escapeAttr(id)}" title="Click to edit title">\${escapeHtml(displayTitle)}</button>
           </div>
           <div>
-            <div class="profile-name">\${escapeHtml(person.name)}</div>
+            <div class="profile-name" data-person-id="\${escapeAttr(id)}" style="cursor:text;" title="Click to edit name">\${escapeHtml(displayName)}</div>
             <div class="profile-meta">\${escapeHtml(person.email || person.source)}</div>
             <div class="badges">
-              <span class="badge \${relationshipClass(person.relationship)}">\${escapeHtml(person.relationship)}</span>
+              <span class="badge neutral">\${escapeHtml(person.relationship)}</span>
               <span class="badge neutral">\${escapeHtml(person.buyingRole)}</span>
-              <span class="badge neutral">\${escapeHtml(person.source)}</span>
             </div>
-            <div class="profile-note">\${escapeHtml(note || "Click the title chip to add stakeholder notes.")}</div>
+            <div class="profile-note">\${escapeHtml(note || "")}</div>
             <div class="owner">Internal owner: \${escapeHtml(person.owner)}</div>
           </div>
-          <button type="button" class="remove ghost" data-person-id="\${escapeAttr(id)}" aria-label="Remove \${escapeAttr(person.name)}">×</button>
+          <button type="button" class="remove ghost" data-person-id="\${escapeAttr(id)}" aria-label="Remove \${escapeAttr(displayName)}">×</button>
         </article>
         \${children.length ? \`<div class="children">\${children.map((childId) => renderTreeNode(childId)).join("")}</div>\` : ""}
         </div>\`;
@@ -1002,6 +1408,17 @@ export function renderOrgMapPreview({ analysis }) {
         notesTitle.textContent = \`\${person.title} · \${person.source}\`;
         notesInput.value = state.notesById[id] || "";
         notesPanel.classList.add("open");
+        appShell.classList.add("notes-open");
+        if (viewProfileLink) {
+          const params = new URLSearchParams(window.location.search);
+          if (accountId && !params.get("account_id")) params.set("account_id", accountId);
+          params.set("contact_id", person.id || "");
+          params.set("name", person.name || "");
+          params.set("source", person.source || "");
+          if (person.email) params.set("email", person.email);
+          viewProfileLink.href = \`/preview/contact?\${params.toString()}\`;
+          viewProfileLink.style.display = "inline";
+        }
         detailStatus.textContent = "Loading Pylon contact details...";
         detailContent.innerHTML = renderLocalContactSummary(person);
 
@@ -1025,6 +1442,8 @@ export function renderOrgMapPreview({ analysis }) {
         state.activeNoteId = null;
         markActiveContact("");
         notesPanel.classList.remove("open");
+        appShell.classList.remove("notes-open");
+        if (viewProfileLink) viewProfileLink.style.display = "none";
       }
 
       async function loadContactDetails(person) {
@@ -1218,6 +1637,7 @@ export function renderOrgMapPreview({ analysis }) {
 
       function startDrag(event, id) {
         state.draggingId = id;
+        state.draggingFromTree = !!event.currentTarget.dataset.inTree;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", id);
         setDragPreview(event, id);
@@ -1228,7 +1648,7 @@ export function renderOrgMapPreview({ analysis }) {
         const person = peopleById.get(id);
         if (!person || !event.dataTransfer?.setDragImage) return;
         const preview = document.createElement("div");
-        preview.className = \`drag-preview \${relationshipClass(person.relationship)}\`;
+        preview.className = "drag-preview";
         preview.innerHTML = \`<div class="drag-preview-photo">\${initials(person.name)}</div><div class="drag-preview-title">\${escapeHtml(person.title)}</div>\`;
         document.body.appendChild(preview);
         event.dataTransfer.setDragImage(preview, 52, 42);
@@ -1237,8 +1657,11 @@ export function renderOrgMapPreview({ analysis }) {
 
       function endDrag(event) {
         state.draggingId = null;
+        state.draggingFromTree = false;
         event.currentTarget.classList?.remove("dragging");
-        document.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+        document.querySelectorAll(".drag-over, .drop-before, .drop-after").forEach((el) =>
+          el.classList.remove("drag-over", "drop-before", "drop-after")
+        );
       }
 
       function allowDrop(event) {
@@ -1248,6 +1671,113 @@ export function renderOrgMapPreview({ analysis }) {
 
       function readDraggedId(event) {
         return event.dataTransfer.getData("text/plain") || state.draggingId;
+      }
+
+      function findParentId(id) {
+        for (const [parentId, children] of Object.entries(state.childrenById)) {
+          if (children.includes(id)) return parentId;
+        }
+        return null;
+      }
+
+      function insertRelativeTo(id, targetId, position) {
+        detach(id);
+        const parentId = findParentId(targetId);
+        if (parentId) {
+          const siblings = state.childrenById[parentId];
+          const idx = siblings.indexOf(targetId);
+          siblings.splice(position === "before" ? idx : idx + 1, 0, id);
+        } else {
+          const idx = state.roots.indexOf(targetId);
+          state.roots.splice(position === "before" ? idx : idx + 1, 0, id);
+        }
+        render();
+      }
+
+      function addCustomContact(name, title) {
+        const id = "custom_" + Math.random().toString(36).slice(2, 9);
+        const person = {
+          id, name, title,
+          relationship: "Neutral / unknown",
+          buyingRole: "Unknown",
+          source: "Manual",
+          email: "", owner: "", notes: "", level: "Unknown"
+        };
+        people.push(person);
+        peopleById.set(id, person);
+        state.notesById[id] = "";
+        document.querySelector("#total-count").textContent = people.length;
+        render();
+      }
+
+      function promotePerson(id) {
+        const parentId = findParentId(id);
+        if (!parentId) return;
+        const grandparentId = findParentId(parentId);
+        detach(id);
+        if (grandparentId) {
+          state.childrenById[grandparentId] ||= [];
+          const idx = state.childrenById[grandparentId].indexOf(parentId);
+          if (idx !== -1) {
+            state.childrenById[grandparentId].splice(idx + 1, 0, id);
+          } else {
+            state.childrenById[grandparentId].push(id);
+          }
+        } else {
+          const rootIdx = state.roots.indexOf(parentId);
+          if (rootIdx !== -1) {
+            state.roots.splice(rootIdx + 1, 0, id);
+          } else {
+            state.roots.push(id);
+          }
+        }
+        render();
+      }
+
+      function startTitleEdit(chip) {
+        const id = chip.dataset.personId;
+        const person = peopleById.get(id);
+        if (!person) return;
+        const current = state.customTitles[id] || person.title;
+        const input = document.createElement("input");
+        input.className = "title-chip-input";
+        input.value = current;
+        chip.replaceWith(input);
+        input.focus();
+        input.select();
+        function commit() {
+          const val = input.value.trim();
+          if (val) state.customTitles[id] = val;
+          render();
+        }
+        input.addEventListener("blur", commit);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+          if (e.key === "Escape") { input.removeEventListener("blur", commit); render(); }
+        });
+      }
+
+      function startNameEdit(nameEl) {
+        const id = nameEl.dataset.personId;
+        const person = peopleById.get(id);
+        if (!person) return;
+        const current = state.customNames[id] || person.name;
+        const input = document.createElement("input");
+        input.style.cssText = "font:inherit;font-size:11px;font-weight:800;border:1px solid #888;border-radius:4px;padding:2px 4px;width:100px;text-align:center;outline:none;";
+        input.value = current;
+        nameEl.replaceWith(input);
+        input.focus();
+        input.select();
+        function commit() {
+          const val = input.value.trim();
+          if (val) state.customNames[id] = val;
+          render();
+        }
+        input.addEventListener("blur", commit);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+          if (e.key === "Escape") { input.removeEventListener("blur", commit); render(); }
+        });
       }
 
       function initials(name) {

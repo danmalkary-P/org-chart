@@ -4,6 +4,7 @@ import { buildContactDetails } from "./contactDetails.js";
 import { buildAccountContext } from "./context.js";
 import { errorResponse } from "./pylonComponents.js";
 import { renderOrgMapPreview } from "./orgMapPreview.js";
+import { renderContactPage } from "./contactPage.js";
 import { renderPreviewPage } from "./previewHtml.js";
 import { renderFollowUpText, renderFollowUpWidget } from "./widgets/followUp.js";
 import { buildOrgMapPreviewData, renderOrgMapWidget } from "./widgets/orgMap.js";
@@ -59,6 +60,20 @@ export async function routeRequest({ method = "GET", url: rawUrl = "/", headers 
       return jsonResult(await buildContactDetails(url.searchParams, config));
     }
 
+    if (url.pathname === "/api/test-connection" && method === "GET") {
+      if (!config.pylonApiToken) {
+        return jsonResult({ ok: false, error: "PYLON_API_TOKEN is not set. Add it to your .env file." }, 200);
+      }
+      try {
+        const { PylonClient } = await import("./pylonClient.js");
+        const client = new PylonClient({ baseUrl: config.pylonApiBase, token: config.pylonApiToken });
+        const result = await client.searchIssuesByAccount("test");
+        return jsonResult({ ok: true, mode: "live", apiBase: config.pylonApiBase, message: "Pylon API connection successful." });
+      } catch (error) {
+        return jsonResult({ ok: false, error: error.message, hint: "Check that PYLON_API_TOKEN is valid and has API access." }, 200);
+      }
+    }
+
     if (url.pathname === "/preview/follow-up" && method === "GET") {
       const { context, modeInfo } = await buildAccountContext(url.searchParams, config);
       const payload = renderFollowUpWidget({
@@ -95,7 +110,17 @@ export async function routeRequest({ method = "GET", url: rawUrl = "/", headers 
 
     if (url.pathname === "/preview/org-map" && method === "GET") {
       const { context } = await buildAccountContext(url.searchParams, config);
-      return htmlResult(renderOrgMapPreview({ analysis: buildOrgMapPreviewData(context) }));
+      return htmlResult(renderOrgMapPreview({ analysis: buildOrgMapPreviewData(context), context }));
+    }
+
+    if (url.pathname === "/preview/contact" && method === "GET") {
+      const accountId = url.searchParams.get("account_id") || "";
+      const [contactData, { context }] = await Promise.all([
+        buildContactDetails(url.searchParams, config),
+        buildAccountContext(url.searchParams, config)
+      ]);
+      const backUrl = `${baseUrl}/preview/org-map${accountId ? `?account_id=${encodeURIComponent(accountId)}` : ""}`;
+      return htmlResult(renderContactPage({ contactData, context, backUrl }));
     }
 
     if (url.pathname === "/widgets/follow-up" && method === "GET") {
