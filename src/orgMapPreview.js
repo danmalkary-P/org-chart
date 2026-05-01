@@ -357,30 +357,6 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         flex-wrap: wrap;
         gap: 8px;
       }
-      .metrics {
-        display: grid;
-        gap: 10px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-bottom: 18px;
-      }
-      .metric {
-        background: var(--subtle);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 12px;
-      }
-      .metric span {
-        color: var(--muted);
-        display: block;
-        font-size: 12px;
-      }
-      .metric strong {
-        display: block;
-        font-size: 20px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        margin-top: 2px;
-      }
       .map-panel {
         background: #fafafa;
         border: 1px solid var(--line);
@@ -389,50 +365,35 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         overflow: auto;
         padding: 16px;
       }
-      .drop-zone {
+      .profile-card.drop-above::before,
+      .profile-card.drop-below::after {
         align-items: center;
-        background: #fbfbfc;
-        border: 1.5px dashed var(--line-strong);
-        border-radius: 9px;
-        color: var(--muted);
+        background: rgba(91, 45, 245, 0.18);
+        border: 2px solid var(--purple);
+        color: var(--purple);
         display: flex;
+        font-size: 22px;
+        font-weight: 900;
+        height: 50%;
         justify-content: center;
-        margin-bottom: 16px;
-        min-height: 54px;
-        padding: 12px;
-        text-align: center;
-      }
-      .drop-zone.drag-over {
-        background: #f0f0f0;
-        border-color: #888;
-      }
-      .profile-card.drag-over {
-        background: #f0f0f0;
-        border-color: #888;
-      }
-      .profile-card.drop-before::before {
-        background: #222;
-        border-radius: 2px;
-        content: "";
-        height: 3px;
-        left: 4px;
+        left: -2px;
+        line-height: 1;
         pointer-events: none;
         position: absolute;
-        right: 4px;
+        right: -2px;
+        z-index: 5;
+      }
+      .profile-card.drop-above::before {
+        border-bottom: 2px dashed var(--purple);
+        border-radius: 12px 12px 0 0;
+        content: "▲";
         top: -2px;
-        z-index: 10;
       }
-      .profile-card.drop-after::after {
-        background: #222;
-        border-radius: 2px;
+      .profile-card.drop-below::after {
+        border-radius: 0 0 12px 12px;
+        border-top: 2px dashed var(--purple);
         bottom: -2px;
-        content: "";
-        height: 3px;
-        left: 4px;
-        pointer-events: none;
-        position: absolute;
-        right: 4px;
-        z-index: 10;
+        content: "▼";
       }
       .tree {
         align-items: flex-start;
@@ -451,52 +412,144 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         text-align: center;
       }
       .profile-card {
-        align-items: center;
         background: transparent;
-        border: 1px solid transparent;
-        border-radius: 12px;
         cursor: grab;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        padding: 7px;
+        display: block;
+        padding: 0;
         position: relative;
-        text-align: center;
-        transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease, transform 140ms ease;
-        width: 112px;
+        text-align: initial;
+        transition: opacity 140ms ease, transform 140ms ease;
+        width: 200px;
         will-change: transform;
       }
       .profile-card:hover {
         transform: translateY(-2px);
       }
-      .profile-card.active .profile-photo {
-        outline: 3px solid #ccc;
-        outline-offset: 3px;
+      .profile-card.active .profile-card-photo {
+        outline: 3px solid var(--purple-soft);
+        outline-offset: 0;
       }
       .profile-card.dragging {
         cursor: grabbing;
         opacity: 0.72;
         transform: scale(0.96);
       }
-      .profile-main {
+      .profile-card-photo {
         align-items: center;
+        background: linear-gradient(135deg, #f1edff 0%, #e3f7eb 100%);
+        border: 4px solid #fff;
+        border-bottom: 0;
+        border-radius: 18px 18px 6px 6px;
+        box-shadow: 0 4px 12px rgba(15, 20, 30, 0.06);
+        color: #475467;
+        display: flex;
+        font-size: 38px;
+        font-weight: 850;
+        height: 150px;
+        justify-content: center;
+        letter-spacing: -0.02em;
+        position: relative;
+        width: 100%;
+      }
+      .profile-card-info {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(15, 20, 30, 0.07);
+        margin: -8px 8px 0;
+        padding: 12px 12px 10px;
+        position: relative;
+        z-index: 2;
+      }
+      .profile-card-name {
+        cursor: text;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+        margin: 0 0 2px;
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .profile-card-title {
+        background: transparent;
+        border: 1px dashed transparent;
+        border-radius: 6px;
+        color: var(--muted);
+        cursor: text;
+        display: block;
+        font: inherit;
+        font-size: 11.5px;
+        line-height: 1.3;
+        margin: 0 auto 11px;
+        max-width: 100%;
+        overflow: hidden;
+        padding: 1px 6px;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .profile-card-title:hover {
+        background: #f7f7f9;
+        border-color: var(--line);
+      }
+      .title-chip-input {
+        background: #fff;
+        border: 1px solid #888;
+        border-radius: 6px;
+        color: #111;
+        font: inherit;
+        font-size: 11.5px;
+        outline: none;
+        padding: 1px 6px;
+        text-align: center;
+        width: 100%;
+      }
+      .profile-card-stats {
+        border-top: 1px solid #eef0f3;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding-top: 9px;
+      }
+      .profile-stat {
+        align-items: center;
+        border-right: 1px solid #eef0f3;
         display: flex;
         flex-direction: column;
-        gap: 7px;
+        gap: 3px;
+        min-width: 0;
+        padding: 0 4px;
       }
-      .profile-photo {
+      .profile-stat:last-child {
+        border-right: 0;
+      }
+      .profile-stat-icon {
         align-items: center;
-        background: #f5f5f5;
-        clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
-        color: #333;
         display: flex;
-        font-size: 21px;
-        font-weight: 850;
-        height: 76px;
+        height: 18px;
         justify-content: center;
-        position: relative;
-        width: 86px;
-        box-shadow: inset 0 0 0 3px #bbb, 0 4px 10px rgba(35, 39, 47, 0.08);
+      }
+      .profile-stat-icon.purple { color: var(--purple); }
+      .profile-stat-icon.green { color: var(--green); }
+      .profile-stat-icon.blue { color: var(--blue); }
+      .profile-stat-value {
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.1;
+        max-width: 100%;
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 100%;
+      }
+      .profile-stat-label {
+        color: var(--muted);
+        font-size: 9.5px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
       }
       .star-marker {
         align-items: center;
@@ -506,106 +559,35 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         color: transparent;
         display: none;
         height: 22px;
-        left: 11px;
+        left: 10px;
         position: absolute;
-        top: 3px;
+        top: 6px;
         width: 22px;
-        z-index: 2;
+        z-index: 4;
       }
       .profile-card.is-key .star-marker {
         display: block;
       }
-      .title-chip {
-        background: #f0f0f0;
-        border: 1px solid #d0d0d0;
-        border-radius: 999px;
-        color: #333;
-        cursor: text;
-        display: block;
-        font-size: 10px;
-        line-height: 1.15;
-        max-width: 104px;
-        overflow: hidden;
-        padding: 4px 7px;
-        text-align: center;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .title-chip:hover {
-        border-color: #888;
-        background: #e8e8e8;
-      }
-      .title-chip-input {
-        background: #fff;
-        border: 1px solid #888;
-        border-radius: 999px;
-        color: #111;
-        font: inherit;
-        font-size: 10px;
-        max-width: 104px;
-        outline: none;
-        padding: 3px 7px;
-        text-align: center;
-        width: 104px;
-      }
-      .profile-name {
-        font-size: 11px;
-        font-weight: 800;
-        line-height: 1.2;
-        max-width: 104px;
-        overflow-wrap: anywhere;
-        text-align: center;
-      }
-      .profile-meta, .contact-meta {
-        color: var(--muted);
-        font-size: 12px;
-      }
-      .badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 8px;
-      }
-      .badge {
-        border-radius: 999px;
-        display: inline-flex;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 3px 7px;
-      }
-      .champion, .risk, .decision, .research, .neutral { background: #eef2f6; color: #475467; }
-      .profile-note {
-        display: none;
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 8px;
-      }
-      .owner {
-        display: none;
-        border-top: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 10px;
-        padding-top: 8px;
-      }
+      .profile-name, .profile-meta, .badges, .profile-note, .owner { display: none; }
       .remove {
         align-items: center;
-        background: rgba(255, 255, 255, 0.92);
+        background: rgba(255, 255, 255, 0.95);
         border: 1px solid var(--line);
         border-radius: 999px;
         box-shadow: 0 3px 8px rgba(20, 24, 32, 0.08);
         color: var(--muted);
         display: flex;
-        font-size: 10px;
-        height: 22px;
+        font-size: 13px;
+        height: 24px;
         justify-content: center;
         opacity: 0;
         padding: 0;
         position: absolute;
-        right: 5px;
-        top: 3px;
+        right: 8px;
+        top: 8px;
         transition: opacity 120ms ease;
-        width: 22px;
+        width: 24px;
+        z-index: 5;
       }
       .profile-card:hover .remove, .profile-card:focus-within .remove {
         opacity: 1;
@@ -908,6 +890,298 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         font-weight: 700;
         margin: 0 0 6px;
       }
+      .linkedin-input {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: inherit;
+        font-size: 13px;
+        padding: 8px 10px;
+        width: 100%;
+      }
+      .linkedin-input:focus {
+        border-color: #888;
+        outline: none;
+      }
+      .card-linkedin {
+        align-items: center;
+        background: #0a66c2;
+        border-radius: 4px;
+        bottom: 6px;
+        color: #fff;
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 850;
+        height: 22px;
+        justify-content: center;
+        position: absolute;
+        right: 8px;
+        text-decoration: none;
+        width: 22px;
+        z-index: 4;
+      }
+      .card-linkedin:hover {
+        background: #084c93;
+      }
+      .sentiment-dot {
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+        height: 16px;
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        width: 16px;
+        z-index: 4;
+      }
+      .sentiment-dot.positive { background: #18a957; }
+      .sentiment-dot.negative { background: #d8423d; }
+      .sentiment-dot.neutral { background: #c9a04a; }
+      .ai-section {
+        background: #faf8ff;
+        border: 1px solid #e6dfff;
+        border-radius: 8px;
+        margin-top: 12px;
+        padding: 10px 12px;
+      }
+      .ai-section h3 {
+        align-items: center;
+        color: var(--purple);
+        display: flex;
+        font-size: 12px;
+        font-weight: 800;
+        gap: 6px;
+        letter-spacing: 0.04em;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+      .ai-section h3::before {
+        content: "✦";
+        font-size: 13px;
+      }
+      .ai-row {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        gap: 2px;
+        margin-bottom: 8px;
+      }
+      .ai-row:last-child { margin-bottom: 0; }
+      .ai-row span {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .ai-pill {
+        align-self: flex-start;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+      }
+      .ai-pill.positive { background: #e3f7eb; color: #0f6b34; }
+      .ai-pill.negative { background: #fce6e5; color: #9a201c; }
+      .ai-pill.neutral { background: #fdf3d7; color: #6e5208; }
+      .connection-modal {
+        display: none;
+        inset: 0;
+        position: fixed;
+        z-index: 50;
+      }
+      .connection-modal.open { display: block; }
+      .connection-modal-backdrop {
+        background: rgba(20, 24, 31, 0.45);
+        inset: 0;
+        position: absolute;
+      }
+      .connection-modal-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(15, 20, 30, 0.18);
+        left: 50%;
+        max-width: 540px;
+        padding: 22px;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 48px);
+      }
+      .connection-modal-head {
+        align-items: flex-start;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .connection-modal-head h2 { font-size: 17px; margin: 0 0 2px; }
+      .connection-modal-head button {
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        display: flex;
+        font-size: 18px;
+        height: 28px;
+        justify-content: center;
+        width: 28px;
+      }
+      .connection-modal-body { display: flex; flex-direction: column; gap: 4px; }
+      .connection-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        margin-top: 10px;
+        text-transform: uppercase;
+      }
+      .connection-email {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: inherit;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.45;
+        padding: 9px 11px;
+        resize: vertical;
+        width: 100%;
+      }
+      .connection-email:focus {
+        border-color: var(--purple);
+        outline: none;
+      }
+      .picker {
+        position: relative;
+      }
+      .picker-button {
+        align-items: center;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        justify-content: space-between;
+        padding: 9px 11px;
+        text-align: left;
+        width: 100%;
+      }
+      .picker-button:focus,
+      .picker.open .picker-button {
+        border-color: var(--purple);
+        outline: none;
+      }
+      .picker-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .picker-label.placeholder {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .picker-caret {
+        color: var(--muted);
+        flex-shrink: 0;
+        font-size: 11px;
+        margin-left: 8px;
+      }
+      .picker-popover {
+        background: #fff;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        box-shadow: 0 8px 22px rgba(15, 20, 30, 0.14);
+        display: none;
+        left: 0;
+        margin-top: 4px;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        z-index: 60;
+      }
+      .picker.open .picker-popover {
+        display: block;
+      }
+      .picker-search {
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        border-radius: 8px 8px 0 0;
+        font: inherit;
+        font-size: 13px;
+        outline: none;
+        padding: 10px 12px;
+        width: 100%;
+      }
+      .picker-list {
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 4px 0;
+      }
+      .picker-item {
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        font-size: 13px;
+        gap: 1px;
+        padding: 7px 12px;
+      }
+      .picker-item.active,
+      .picker-item:hover {
+        background: var(--purple-soft);
+      }
+      .picker-item strong {
+        font-weight: 700;
+      }
+      .picker-item-meta {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .picker-empty {
+        color: var(--muted);
+        font-size: 12px;
+        padding: 14px;
+        text-align: center;
+      }
+      .connection-modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
+      .connection-pill {
+        align-items: center;
+        background: #f1edff;
+        border: 1px solid #d6c9ff;
+        border-radius: 999px;
+        color: var(--purple);
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        gap: 4px;
+        margin: 8px auto 0;
+        padding: 2px 8px;
+      }
+      .profile-card-info > .connection-pill {
+        display: inline-flex;
+        margin: 8px auto 0;
+        text-align: center;
+      }
+      .profile-card-info {
+        text-align: center;
+      }
+      .connection-line {
+        background: var(--purple);
+        height: 2px;
+        opacity: 0.4;
+        pointer-events: none;
+        position: absolute;
+        transform-origin: left center;
+        z-index: 1;
+      }
       @media (max-width: 1120px) {
         .app-shell {
           grid-template-columns: 54px minmax(0, 1fr) 330px 0px;
@@ -929,7 +1203,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         .stage {
           padding: 18px;
         }
-        .metrics, .insights {
+        .insights {
           grid-template-columns: 1fr;
         }
       }
@@ -1012,7 +1286,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           </div>
           <div class="actions">
             <a class="button secondary" href="/">Home</a>
-            <a class="button secondary" href="/compose">Input builder</a>
+            <a class="button secondary" href="/settings">Settings</a>
           </div>
         </header>
         <main class="stage">
@@ -1022,18 +1296,11 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
               <div class="muted">Build account hierarchy by dragging contacts from the right panel into the map.</div>
             </div>
             <div class="stage-actions">
-              <button type="button" class="secondary" id="suggested-layout">Use suggested layout</button>
+              <button type="button" class="primary" id="make-connection">Make a connection</button>
               <button type="button" class="secondary" id="clear-chart">Clear chart</button>
             </div>
           </div>
-          <section class="metrics">
-            ${metric("Coverage", `${analysis.coverage.score}/100`, analysis.confidence)}
-            ${metric("Mapped people", analysis.coverage.totalPeople, `${analysis.coverage.ownedCount} owned`)}
-            ${metric("Decision path", yesNo(analysis.coverage.hasEconomicBuyer), "Economic buyer")}
-            ${metric("Technical path", yesNo(analysis.coverage.hasTechnicalApprover), "Technical approver")}
-          </section>
           <section class="map-panel" aria-label="Org chart map">
-            <div id="root-drop" class="drop-zone">Drop contact here as a top-level person</div>
             <div id="org-tree" class="tree"></div>
           </section>
           <section class="insights">
@@ -1079,12 +1346,56 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       </div>
       <div id="detail-status" class="detail-status">Click a contact to load Pylon and CRM detail.</div>
       <div id="detail-content" class="detail-content"></div>
-      <label class="notes-label" for="notes-input">Notes</label>
+      <label class="notes-label" for="linkedin-input">LinkedIn URL</label>
+      <input id="linkedin-input" type="url" class="linkedin-input" placeholder="https://linkedin.com/in/...">
+      <label class="notes-label" for="notes-input" style="margin-top:14px;">Notes</label>
       <textarea id="notes-input" placeholder="Add notes for this stakeholder..."></textarea>
       <div class="actions" style="margin-top: 12px;">
-        <button type="button" class="primary" id="save-notes">Save notes</button>
+        <button type="button" class="primary" id="save-notes">Save</button>
       </div>
       </aside>
+      <div id="connection-modal" class="connection-modal" aria-hidden="true">
+        <div class="connection-modal-backdrop"></div>
+        <div class="connection-modal-card" role="dialog" aria-labelledby="connection-modal-title">
+          <div class="connection-modal-head">
+            <div>
+              <h2 id="connection-modal-title">Make a connection</h2>
+              <div class="muted" style="font-size:12px;">Pick the two people, then draft the intro email.</div>
+            </div>
+            <button type="button" class="ghost" id="connection-close" aria-label="Close">×</button>
+          </div>
+          <div class="connection-modal-body">
+            <label class="connection-label">From (who you'll write to)</label>
+            <div class="picker" data-picker="from">
+              <button type="button" class="picker-button">
+                <span class="picker-label">Select contact</span>
+                <span class="picker-caret">▾</span>
+              </button>
+              <div class="picker-popover">
+                <input type="search" class="picker-search" placeholder="Search by name or title" autocomplete="off">
+                <div class="picker-list"></div>
+              </div>
+            </div>
+            <label class="connection-label">To (who they should connect you with)</label>
+            <div class="picker" data-picker="to">
+              <button type="button" class="picker-button">
+                <span class="picker-label">Select contact</span>
+                <span class="picker-caret">▾</span>
+              </button>
+              <div class="picker-popover">
+                <input type="search" class="picker-search" placeholder="Search by name or title" autocomplete="off">
+                <div class="picker-list"></div>
+              </div>
+            </div>
+            <label class="connection-label" for="conn-email">Email draft</label>
+            <textarea id="conn-email" class="connection-email" rows="9" placeholder="Hi {from}, ..."></textarea>
+          </div>
+          <div class="connection-modal-actions">
+            <button type="button" class="secondary" id="conn-regen">Regenerate draft</button>
+            <button type="button" class="primary" id="conn-save">Save connection</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -1103,8 +1414,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         draggingFromTree: false,
         activeNoteId: null,
         notesById: Object.fromEntries(people.map((person) => [person.id, person.notes || ""])),
+        linkedinById: Object.fromEntries(people.map((person) => [person.id, person.linkedinUrl || ""])),
         customTitles: {},
-        customNames: {}
+        customNames: {},
+        connections: []
       };
 
       // Account summary + opportunity sidebar
@@ -1202,23 +1515,203 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const appShell = document.querySelector(".app-shell");
       const peopleList = document.querySelector("#people-list");
       const orgTree = document.querySelector("#org-tree");
-      const rootDrop = document.querySelector("#root-drop");
       const placedCount = document.querySelector("#placed-count");
       const notesPanel = document.querySelector("#notes-panel");
       const notesName = document.querySelector("#notes-name");
       const notesTitle = document.querySelector("#notes-title");
       const notesInput = document.querySelector("#notes-input");
+      const linkedinInput = document.querySelector("#linkedin-input");
       const detailStatus = document.querySelector("#detail-status");
       const detailContent = document.querySelector("#detail-content");
 
       document.querySelector("#clear-chart").addEventListener("click", () => {
         state.roots = [];
         state.childrenById = {};
+        state.connections = [];
         render();
       });
-      document.querySelector("#suggested-layout").addEventListener("click", () => {
-        applySuggestedLayout();
+
+      const connectionModal = document.querySelector("#connection-modal");
+      const connEmailField = document.querySelector("#conn-email");
+
+      function setupPicker(name, onChange) {
+        const root = connectionModal.querySelector(\`[data-picker="\${name}"]\`);
+        const button = root.querySelector(".picker-button");
+        const label = button.querySelector(".picker-label");
+        const popover = root.querySelector(".picker-popover");
+        const search = root.querySelector(".picker-search");
+        const list = root.querySelector(".picker-list");
+        let selectedId = "";
+        let activeIndex = 0;
+        let filtered = people.slice();
+
+        function renderList() {
+          if (!filtered.length) {
+            list.innerHTML = '<div class="picker-empty">No contacts match.</div>';
+            return;
+          }
+          list.innerHTML = filtered.map((p, i) =>
+            \`<div class="picker-item\${i === activeIndex ? " active" : ""}" data-id="\${escapeAttr(p.id)}">
+              <strong>\${escapeHtml(p.name)}</strong>
+              <span class="picker-item-meta">\${escapeHtml(p.title || "")}</span>
+            </div>\`
+          ).join("");
+        }
+
+        function applyQuery(query) {
+          const q = (query || "").trim().toLowerCase();
+          filtered = q
+            ? people.filter((p) =>
+                (p.name || "").toLowerCase().includes(q) ||
+                (p.title || "").toLowerCase().includes(q) ||
+                (p.email || "").toLowerCase().includes(q))
+            : people.slice();
+          activeIndex = Math.min(activeIndex, Math.max(0, filtered.length - 1));
+          renderList();
+        }
+
+        function open() {
+          root.classList.add("open");
+          activeIndex = Math.max(0, filtered.findIndex((p) => p.id === selectedId));
+          if (activeIndex < 0) activeIndex = 0;
+          renderList();
+          requestAnimationFrame(() => {
+            search.focus();
+            search.select();
+          });
+        }
+
+        function close() {
+          root.classList.remove("open");
+        }
+
+        function setValue(id) {
+          const person = peopleById.get(id);
+          selectedId = id;
+          if (person) {
+            label.textContent = person.title ? \`\${person.name} — \${person.title}\` : person.name;
+            label.classList.remove("placeholder");
+          } else {
+            label.textContent = "Select contact";
+            label.classList.add("placeholder");
+          }
+          if (typeof onChange === "function") onChange(id);
+        }
+
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (root.classList.contains("open")) close();
+          else open();
+        });
+
+        search.addEventListener("input", () => {
+          activeIndex = 0;
+          applyQuery(search.value);
+        });
+
+        search.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            event.stopPropagation();
+            close();
+            button.focus();
+            return;
+          }
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            activeIndex = Math.min(filtered.length - 1, activeIndex + 1);
+            renderList();
+            list.querySelectorAll(".picker-item")[activeIndex]?.scrollIntoView({ block: "nearest" });
+          } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            activeIndex = Math.max(0, activeIndex - 1);
+            renderList();
+            list.querySelectorAll(".picker-item")[activeIndex]?.scrollIntoView({ block: "nearest" });
+          } else if (event.key === "Enter") {
+            event.preventDefault();
+            const item = filtered[activeIndex];
+            if (item) {
+              setValue(item.id);
+              close();
+              button.focus();
+            }
+          }
+        });
+
+        list.addEventListener("click", (event) => {
+          const item = event.target.closest(".picker-item");
+          if (!item) return;
+          setValue(item.dataset.id);
+          close();
+          button.focus();
+        });
+
+        document.addEventListener("click", (event) => {
+          if (!root.contains(event.target)) close();
+        });
+
+        renderList();
+
+        return {
+          setValue,
+          getValue: () => selectedId,
+          reset() {
+            search.value = "";
+            applyQuery("");
+          }
+        };
+      }
+
+      function generateConnectionDraft() {
+        const from = peopleById.get(connFromPicker.getValue());
+        const to = peopleById.get(connToPicker.getValue());
+        if (!from || !to) return "";
+        const fromFirst = (from.name || "").split(" ")[0] || from.name || "";
+        return \`Hi \${fromFirst},\\n\\nQuick ask — would you be open to making an introduction to \${to.name}\${to.title ? \` (\${to.title})\` : ""}? We're working through a few questions on our end and your perspective on who else should weigh in would be helpful.\\n\\nHappy to share more context first if useful — just let me know.\\n\\nThanks!\`;
+      }
+
+      const connFromPicker = setupPicker("from", () => { connEmailField.value = generateConnectionDraft(); });
+      const connToPicker = setupPicker("to", () => { connEmailField.value = generateConnectionDraft(); });
+
+      function openConnectionModal() {
+        connFromPicker.reset();
+        connToPicker.reset();
+        if (people[0]) connFromPicker.setValue(people[0].id);
+        if (people[1]) connToPicker.setValue(people[1].id);
+        else if (people[0]) connToPicker.setValue(people[0].id);
+        connEmailField.value = generateConnectionDraft();
+        connectionModal.classList.add("open");
+        connectionModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeConnectionModal() {
+        connectionModal.classList.remove("open");
+        connectionModal.setAttribute("aria-hidden", "true");
+      }
+
+      document.querySelector("#make-connection").addEventListener("click", openConnectionModal);
+      document.querySelector("#connection-close").addEventListener("click", closeConnectionModal);
+      connectionModal.querySelector(".connection-modal-backdrop").addEventListener("click", closeConnectionModal);
+      document.querySelector("#conn-regen").addEventListener("click", () => {
+        connEmailField.value = generateConnectionDraft();
+      });
+      document.querySelector("#conn-save").addEventListener("click", () => {
+        const fromId = connFromPicker.getValue();
+        const toId = connToPicker.getValue();
+        if (!fromId || !toId || fromId === toId) {
+          alert("Please select two different contacts.");
+          return;
+        }
+        state.connections.push({
+          id: "conn_" + Math.random().toString(36).slice(2, 9),
+          fromId,
+          toId,
+          email: connEmailField.value
+        });
+        closeConnectionModal();
         render();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && connectionModal.classList.contains("open")) closeConnectionModal();
       });
       document.querySelector("#close-notes").addEventListener("click", closeNotes);
       document.addEventListener("keydown", (event) => {
@@ -1227,6 +1720,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       document.querySelector("#save-notes").addEventListener("click", () => {
         if (!state.activeNoteId) return;
         state.notesById[state.activeNoteId] = notesInput.value;
+        state.linkedinById[state.activeNoteId] = linkedinInput.value.trim();
         render();
         closeNotes();
       });
@@ -1259,12 +1753,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         if (e.key === "Enter") document.querySelector("#save-new-contact").click();
       });
 
-      rootDrop.addEventListener("dragover", allowDrop);
-      rootDrop.addEventListener("dragenter", () => rootDrop.classList.add("drag-over"));
-      rootDrop.addEventListener("dragleave", () => rootDrop.classList.remove("drag-over"));
-      rootDrop.addEventListener("drop", (event) => {
+      orgTree.addEventListener("dragover", allowDrop);
+      orgTree.addEventListener("drop", (event) => {
+        if (event.target.closest(".profile-card")) return;
         event.preventDefault();
-        rootDrop.classList.remove("drag-over");
         const id = readDraggedId(event);
         if (id) placeAtRoot(id);
       });
@@ -1307,28 +1799,26 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             allowDrop(event);
             const rect = card.getBoundingClientRect();
             const isTop = event.clientY < rect.top + rect.height / 2;
-            card.classList.toggle("drop-before", isTop);
-            card.classList.toggle("drop-after", !isTop);
+            card.classList.toggle("drop-above", isTop);
+            card.classList.toggle("drop-below", !isTop);
           });
-          card.addEventListener("dragenter", () => card.classList.add("drag-over"));
           card.addEventListener("dragleave", (event) => {
             if (!card.contains(event.relatedTarget)) {
-              card.classList.remove("drag-over", "drop-before", "drop-after");
+              card.classList.remove("drop-above", "drop-below");
             }
           });
           card.addEventListener("drop", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const isTop = card.classList.contains("drop-before");
-            card.classList.remove("drag-over", "drop-before", "drop-after");
+            const isAbove = card.classList.contains("drop-above");
+            card.classList.remove("drop-above", "drop-below");
             const id = readDraggedId(event);
             const targetId = card.dataset.personId;
             if (!id || id === targetId) return;
-            if (state.draggingFromTree) {
-              if (!isDescendant(targetId, id)) {
-                insertRelativeTo(id, targetId, isTop ? "before" : "after");
-              }
-            } else if (!isDescendant(targetId, id)) {
+            if (isDescendant(targetId, id)) return;
+            if (isAbove) {
+              placeAbove(id, targetId);
+            } else {
               placeUnder(id, targetId);
             }
           });
@@ -1346,7 +1836,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             startTitleEdit(chip);
           });
         });
-        orgTree.querySelectorAll(".profile-name[data-person-id]").forEach((nameEl) => {
+        orgTree.querySelectorAll(".profile-card-name[data-person-id]").forEach((nameEl) => {
           nameEl.addEventListener("click", (event) => {
             event.stopPropagation();
             startNameEdit(nameEl);
@@ -1372,31 +1862,86 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         const person = peopleById.get(id);
         if (!person) return "";
         const children = state.childrenById[id] || [];
-        const note = state.notesById[id] || person.ownerReason || "";
+        const linkedinUrl = state.linkedinById[id] || "";
+        const sentiment = person.aiFields?.sentiment || "";
+        const sentimentTitle = sentiment ? \`AI sentiment: \${sentiment}\${person.aiFields?.sentimentReason ? " — " + person.aiFields.sentimentReason : ""}\` : "";
+        const connectionCount = state.connections.filter((c) => c.fromId === id || c.toId === id).length;
         const isKey = ["Champion / coach", "Decision maker", "Research lead"].includes(person.relationship);
         const displayTitle = state.customTitles[id] || person.title;
         const displayName = state.customNames[id] || person.name;
+        const reportsCount = children.length;
+        const department = person.department || extractDepartment(displayTitle);
+        const role = extractRole(displayTitle);
         return \`<div class="tree-node \${children.length ? "has-children" : ""}">
         <article class="profile-card \${isKey ? "is-key" : ""}" draggable="true" data-person-id="\${escapeAttr(id)}" data-in-tree="1">
           <div class="star-marker" aria-hidden="true"></div>
-          <div class="profile-main">
-            <div class="profile-photo">\${initials(displayName)}</div>
-            <button type="button" draggable="false" class="title-chip" data-person-id="\${escapeAttr(id)}" title="Click to edit title">\${escapeHtml(displayTitle)}</button>
-          </div>
-          <div>
-            <div class="profile-name" data-person-id="\${escapeAttr(id)}" style="cursor:text;" title="Click to edit name">\${escapeHtml(displayName)}</div>
-            <div class="profile-meta">\${escapeHtml(person.email || person.source)}</div>
-            <div class="badges">
-              <span class="badge neutral">\${escapeHtml(person.relationship)}</span>
-              <span class="badge neutral">\${escapeHtml(person.buyingRole)}</span>
-            </div>
-            <div class="profile-note">\${escapeHtml(note || "")}</div>
-            <div class="owner">Internal owner: \${escapeHtml(person.owner)}</div>
-          </div>
+          \${sentiment ? \`<div class="sentiment-dot \${sentiment}" title="\${escapeAttr(sentimentTitle)}"></div>\` : ""}
           <button type="button" class="remove ghost" data-person-id="\${escapeAttr(id)}" aria-label="Remove \${escapeAttr(displayName)}">×</button>
+          <div class="profile-card-photo">\${initials(displayName)}</div>
+          <div class="profile-card-info">
+            <div class="profile-card-name" data-person-id="\${escapeAttr(id)}" title="Click to edit name">\${escapeHtml(displayName)}</div>
+            <button type="button" draggable="false" class="profile-card-title title-chip" data-person-id="\${escapeAttr(id)}" title="Click to edit title">\${escapeHtml(displayTitle)}</button>
+            <div class="profile-card-stats">
+              <div class="profile-stat" title="Direct reports in this chart">
+                <div class="profile-stat-icon purple">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="5.5" y="1" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="1" y="11" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="10" y="11" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 5.5v3M3.5 8.5h9M3.5 8.5v2.5M12.5 8.5v2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="profile-stat-value">\${reportsCount}</div>
+                <div class="profile-stat-label">Reports</div>
+              </div>
+              <div class="profile-stat" title="\${escapeAttr(department || "Department unknown")}">
+                <div class="profile-stat-icon green">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="3" y="2" width="10" height="13" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="5.5" y="4.5" width="1.5" height="1.5" fill="currentColor"/>
+                    <rect x="9" y="4.5" width="1.5" height="1.5" fill="currentColor"/>
+                    <rect x="5.5" y="7.5" width="1.5" height="1.5" fill="currentColor"/>
+                    <rect x="9" y="7.5" width="1.5" height="1.5" fill="currentColor"/>
+                    <rect x="6.5" y="11" width="3" height="4" fill="currentColor"/>
+                  </svg>
+                </div>
+                <div class="profile-stat-value">\${escapeHtml(department || "—")}</div>
+                <div class="profile-stat-label">Department</div>
+              </div>
+              <div class="profile-stat" title="\${escapeAttr(role || "Role")}">
+                <div class="profile-stat-icon blue">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="2" y="5" width="12" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M6 5V3.5h4V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M2 9h12" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="profile-stat-value">\${escapeHtml(role || "—")}</div>
+                <div class="profile-stat-label">Role</div>
+              </div>
+            </div>
+            \${connectionCount ? \`<div class="connection-pill">↔ \${connectionCount} connection\${connectionCount > 1 ? "s" : ""}</div>\` : ""}
+            \${linkedinUrl ? \`<a href="\${escapeAttr(linkedinUrl)}" target="_blank" rel="noopener" class="card-linkedin" draggable="false" title="Open LinkedIn profile" onclick="event.stopPropagation()">in</a>\` : ""}
+          </div>
         </article>
         \${children.length ? \`<div class="children">\${children.map((childId) => renderTreeNode(childId)).join("")}</div>\` : ""}
         </div>\`;
+      }
+
+      function extractRole(title) {
+        const t = (title || "").trim();
+        const match = t.match(/\\b(CEO|CFO|CTO|COO|CRO|CMO|CSO|CIO|SVP|EVP|VP|Senior\\s+Director|Director|Senior\\s+Manager|Manager|Lead|Head|President|Chief|Founder|Partner|Principal|Architect)\\b/i);
+        if (match) {
+          const word = match[1].replace(/\\s+/g, " ");
+          return /^[A-Z]+$/.test(word) ? word : word.replace(/\\b\\w/g, (c) => c.toUpperCase());
+        }
+        return (t.split(/\\s+/)[0] || "").substring(0, 12);
+      }
+
+      function extractDepartment(title) {
+        const t = (title || "").trim();
+        const cleaned = t.replace(/^(CEO|CFO|CTO|COO|CRO|CMO|CSO|CIO|SVP|EVP|VP|Senior\\s+Director|Director|Senior\\s+Manager|Manager|Lead|Head|President|Chief|Founder|Partner|Principal|Architect)\\b\\s*(of\\s+)?/i, "").trim();
+        return cleaned;
       }
 
       async function openContactDetails(id) {
@@ -1407,6 +1952,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         notesName.textContent = person.name;
         notesTitle.textContent = \`\${person.title} · \${person.source}\`;
         notesInput.value = state.notesById[id] || "";
+        linkedinInput.value = state.linkedinById[id] || "";
         notesPanel.classList.add("open");
         appShell.classList.add("notes-open");
         if (viewProfileLink) {
@@ -1466,10 +2012,12 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
 
       function renderContactDetail(detail) {
         const contact = detail.contact || {};
+        const node = peopleById.get(state.activeNoteId) || {};
         notesName.textContent = contact.name || "Contact details";
         notesTitle.textContent = [contact.title, detail.mode === "live" ? "Live Pylon" : "Demo data"].filter(Boolean).join(" · ");
         detailStatus.textContent = detail.sourceNote || "Loaded on click.";
         detailContent.innerHTML = [
+          renderAiInsights(node.aiFields, contact.customFields),
           detailSection("Profile", [
             ["Email", contact.email],
             ["Phone", contact.phone],
@@ -1500,6 +2048,25 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             body: warning
           }))) : ""
         ].join("");
+      }
+
+      function renderAiInsights(aiFields, customFields) {
+        const fields = aiFields || {};
+        const cf = customFields || {};
+        const sentiment = fields.sentiment || "";
+        const summary = fields.summary || cf.ai_summary || "";
+        const reason = fields.sentimentReason || cf.low_sentiment_reason || "";
+        const trend = fields.engagementTrend || cf.engagement_trend || "";
+        if (!sentiment && !summary && !reason && !trend) return "";
+        const rows = [];
+        if (sentiment) {
+          const label = sentiment.charAt(0).toUpperCase() + sentiment.slice(1);
+          rows.push(\`<div class="ai-row"><span>Sentiment</span><div class="ai-pill \${sentiment}">\${escapeHtml(label)}</div></div>\`);
+        }
+        if (reason) rows.push(\`<div class="ai-row"><span>Why</span>\${escapeHtml(reason)}</div>\`);
+        if (summary) rows.push(\`<div class="ai-row"><span>AI summary</span>\${escapeHtml(summary)}</div>\`);
+        if (trend) rows.push(\`<div class="ai-row"><span>Engagement trend</span>\${escapeHtml(trend)}</div>\`);
+        return \`<section class="ai-section"><h3>AI Insights</h3>\${rows.join("")}</section>\`;
       }
 
       function renderLocalContactSummary(person) {
@@ -1596,6 +2163,25 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         if (options.renderAfter) render();
       }
 
+      function placeAbove(id, targetId) {
+        if (!peopleById.has(id) || !peopleById.has(targetId) || id === targetId) return;
+        if (isDescendant(targetId, id)) return;
+        detach(id);
+        const targetParent = findParentId(targetId);
+        if (targetParent) {
+          const siblings = state.childrenById[targetParent];
+          const idx = siblings.indexOf(targetId);
+          if (idx !== -1) siblings.splice(idx, 1, id);
+        } else {
+          const idx = state.roots.indexOf(targetId);
+          if (idx !== -1) state.roots.splice(idx, 1, id);
+          else state.roots.push(id);
+        }
+        state.childrenById[id] ||= [];
+        if (!state.childrenById[id].includes(targetId)) state.childrenById[id].push(targetId);
+        render();
+      }
+
       function removeFromChart(id) {
         const descendants = allDescendants(id);
         detach(id);
@@ -1659,8 +2245,8 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         state.draggingId = null;
         state.draggingFromTree = false;
         event.currentTarget.classList?.remove("dragging");
-        document.querySelectorAll(".drag-over, .drop-before, .drop-after").forEach((el) =>
-          el.classList.remove("drag-over", "drop-before", "drop-after")
+        document.querySelectorAll(".drag-over, .drop-above, .drop-below").forEach((el) =>
+          el.classList.remove("drag-over", "drop-above", "drop-below")
         );
       }
 

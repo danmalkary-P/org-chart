@@ -46,6 +46,10 @@ const mockContexts = {
         customFields: {
           buying_role: "Economic buyer",
           sentiment: "Interested, cautious",
+          ai_sentiment: "Positive",
+          low_sentiment: false,
+          ai_summary: "Strong champion driving expansion eval. Asking for case studies and pricing guardrails.",
+          engagement_trend: "Increasing",
           salesforce_page: "https://salesforce.example.com/lightning/r/Contact/003ACME000MIA/view",
           department: "Revenue Operations",
           lifecycle_stage: "Expansion evaluation"
@@ -74,6 +78,11 @@ const mockContexts = {
         customFields: {
           buying_role: "Technical approver",
           sentiment: "Blocked on SSO",
+          ai_sentiment: "Negative",
+          low_sentiment: true,
+          low_sentiment_reason: "Repeated SSO redirect failures over 14 days. Renewal risk if unresolved.",
+          ai_summary: "Technical blocker. SSO migration stalled, frustration trending up.",
+          engagement_trend: "Declining",
           salesforce_page: "https://salesforce.example.com/lightning/r/Contact/003ACME000OMAR/view",
           department: "IT",
           lifecycle_stage: "Technical validation"

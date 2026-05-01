@@ -286,6 +286,7 @@ function buildContactNode({ contact, context, connectors }) {
     email: contact.email || "",
     title: contact.role || contact.customFields?.title || "Role unknown",
     level: inferOrgLevel(roleText),
+    department: contact.customFields?.department || "",
     buyingRole,
     relationship,
     owner: owner?.name || "Unowned",
@@ -293,8 +294,34 @@ function buildContactNode({ contact, context, connectors }) {
     source: "Pylon contact",
     score: relationshipScore(relationship, owner),
     evidenceUrl: relatedIssues[0]?.url || owner?.evidenceUrl || "",
-    notes: buildNodeNotes({ contact, relatedIssues })
+    notes: buildNodeNotes({ contact, relatedIssues }),
+    aiFields: extractAiFields(contact.customFields)
   };
+}
+
+function extractAiFields(customFields = {}) {
+  const sentiment = pickSentiment(customFields);
+  return {
+    sentiment,
+    sentimentReason: customFields.low_sentiment_reason || customFields.sentiment_reason || customFields.sentiment || "",
+    summary: customFields.ai_summary || customFields.account_summary || "",
+    engagementTrend: customFields.engagement_trend || ""
+  };
+}
+
+function pickSentiment(customFields) {
+  const explicit = (customFields.ai_sentiment || customFields.sentiment_label || "").toString().toLowerCase();
+  if (explicit) {
+    if (/posit|champion|happy|strong/.test(explicit)) return "positive";
+    if (/negat|low|risk|block|frustrat|angry/.test(explicit)) return "negative";
+    if (/neutral|mixed|caution/.test(explicit)) return "neutral";
+  }
+  if (customFields.low_sentiment === true || customFields.low_sentiment === "true") return "negative";
+  const text = `${customFields.sentiment || ""}`.toLowerCase();
+  if (/block|risk|frustrat|angry|negat/.test(text)) return "negative";
+  if (/champion|positive|interested|engag/.test(text)) return "positive";
+  if (text) return "neutral";
+  return "";
 }
 
 function buildLinkedInNode({ person, connectors }) {

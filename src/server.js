@@ -1,5 +1,5 @@
 import http from "node:http";
-import { loadConfig } from "./config.js";
+import { loadConfig, saveSavedConfig } from "./config.js";
 import { buildContactDetails } from "./contactDetails.js";
 import { buildAccountContext } from "./context.js";
 import { errorResponse } from "./pylonComponents.js";
@@ -10,19 +10,33 @@ import { renderFollowUpText, renderFollowUpWidget } from "./widgets/followUp.js"
 import { buildOrgMapPreviewData, renderOrgMapWidget } from "./widgets/orgMap.js";
 import { renderWarmIntroText, renderWarmIntroWidget } from "./widgets/warmIntro.js";
 
-export function createAppServer({ config = loadConfig() } = {}) {
+export function createAppServer({ config: _initialConfig = loadConfig() } = {}) {
   return http.createServer(async (req, res) => {
     const result = await routeRequest({
       method: req.method,
       url: req.url,
       headers: req.headers,
-      config
+      config: loadConfig(),
+      body: await readBody(req)
     });
     writeResult(res, result);
   });
 }
 
-export async function routeRequest({ method = "GET", url: rawUrl = "/", headers = {}, config = loadConfig() }) {
+function readBody(req) {
+  return new Promise((resolve) => {
+    if (req.method === "GET" || req.method === "HEAD") {
+      resolve("");
+      return;
+    }
+    let data = "";
+    req.on("data", (chunk) => { data += chunk; });
+    req.on("end", () => resolve(data));
+    req.on("error", () => resolve(""));
+  });
+}
+
+export async function routeRequest({ method = "GET", url: rawUrl = "/", headers = {}, config = loadConfig(), body = "" }) {
   try {
     const baseUrl = requestBaseUrl(headers, config);
     const url = new URL(rawUrl, baseUrl);
@@ -33,6 +47,59 @@ export async function routeRequest({ method = "GET", url: rawUrl = "/", headers 
 
     if (url.pathname === "/compose" && method === "GET") {
       return htmlResult(composeHtml(config));
+    }
+
+    if (url.pathname === "/settings" && method === "GET") {
+      return htmlResult(settingsHtml(config));
+    }
+
+    if (url.pathname === "/api/settings" && method === "POST") {
+      try {
+        const payload = body ? JSON.parse(body) : {};
+        const updates = {};
+        if (typeof payload.pylonMcpUrl === "string") updates.pylonMcpUrl = payload.pylonMcpUrl.trim();
+        if (typeof payload.pylonApiBase === "string") updates.pylonApiBase = payload.pylonApiBase.trim();
+        if (typeof payload.pylonApiToken === "string" && payload.pylonApiToken && !payload.pylonApiToken.startsWith("•")) {
+          updates.pylonApiToken = payload.pylonApiToken.trim();
+        }
+        if (payload.clearToken === true) updates.pylonApiToken = "";
+        saveSavedConfig(updates);
+        const fresh = loadConfig();
+        return jsonResult({
+          ok: true,
+          tokenSource: fresh.pylonTokenSource,
+          tokenConfigured: Boolean(fresh.pylonApiToken),
+          pylonMcpUrl: fresh.pylonMcpUrl,
+          pylonApiBase: fresh.pylonApiBase
+        });
+      } catch (error) {
+        return jsonResult({ ok: false, error: error.message }, 200);
+      }
+    }
+
+    if (url.pathname === "/api/test-mcp" && method === "POST") {
+      const fresh = loadConfig();
+      if (!fresh.pylonApiToken) {
+        return jsonResult({ ok: false, error: "No Pylon token saved. Add one in settings first." }, 200);
+      }
+      try {
+        const response = await fetch(`${fresh.pylonApiBase}/me`, {
+          headers: { Authorization: `Bearer ${fresh.pylonApiToken}`, Accept: "application/json" }
+        });
+        const text = await response.text();
+        if (!response.ok) {
+          return jsonResult({ ok: false, error: `Pylon API ${response.status}: ${text.slice(0, 200)}` }, 200);
+        }
+        const me = JSON.parse(text);
+        return jsonResult({
+          ok: true,
+          identity: { name: me?.data?.name || me?.name || "Pylon user", email: me?.data?.email || me?.email || "" },
+          mcpUrl: fresh.pylonMcpUrl,
+          apiBase: fresh.pylonApiBase
+        });
+      } catch (error) {
+        return jsonResult({ ok: false, error: error.message }, 200);
+      }
     }
 
     if (url.pathname === "/health" && method === "GET") {
@@ -50,7 +117,6 @@ export async function routeRequest({ method = "GET", url: rawUrl = "/", headers 
         verification: "Pylon calls each widget with request_type=verify&code=...; the endpoint echoes { code }.",
         browserPreviews: {
           followUpWriter: `${baseUrl}/preview/follow-up?account_id=acme-risk`,
-          warmIntroMapper: `${baseUrl}/preview/warm-intro?account_id=acme-risk`,
           orgChartMapper: `${baseUrl}/preview/org-map?account_id=acme-risk`
         }
       });
@@ -86,23 +152,6 @@ export async function routeRequest({ method = "GET", url: rawUrl = "/", headers 
       return htmlResult(
         renderPreviewPage({
           title: "Follow-Up Writer",
-          payload
-        })
-      );
-    }
-
-    if (url.pathname === "/preview/warm-intro" && method === "GET") {
-      const { context, modeInfo } = await buildAccountContext(url.searchParams, config);
-      const payload = renderWarmIntroWidget({
-        context,
-        modeInfo,
-        baseUrl,
-        searchParams: url.searchParams,
-        liveEnabled: Boolean(config.pylonApiToken)
-      });
-      return htmlResult(
-        renderPreviewPage({
-          title: "Warm Intro Mapper",
           payload
         })
       );
@@ -465,12 +514,6 @@ function homeHtml(config) {
           <p>Drafts a post-call email grounded in open Pylon issues, calendar context, and committed next steps. Keeps promises separate from commercial asks.</p>
           <div class="card-cta">Open preview →</div>
         </a>
-        <a class="card" href="/preview/warm-intro?account_id=acme-risk">
-          <div class="card-icon green">🤝</div>
-          <h2>Warm Intro Mapper</h2>
-          <p>Scores internal teammates by their relationship strength to a contact and drafts a precise intro-ask. Surfaces LinkedIn multithread candidates.</p>
-          <div class="card-cta">Open preview →</div>
-        </a>
         <a class="card" href="/preview/org-map?account_id=acme-risk">
           <div class="card-icon purple">🗂</div>
           <h2>Org Chart Mapper</h2>
@@ -495,6 +538,132 @@ function homeHtml(config) {
     </main>
   </body>
 </html>`;
+}
+
+function settingsHtml(config) {
+  const tokenStored = Boolean(config.pylonApiToken);
+  const tokenSource = config.pylonTokenSource;
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Settings — Pylon Sales Heat</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; background: #f6f8fb; color: #15202b; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.5; }
+      header { background: #fff; border-bottom: 1px solid #d9e0e8; padding: 14px 28px; display: flex; align-items: center; gap: 14px; }
+      header a { color: #5b2df5; text-decoration: none; font-weight: 600; font-size: 14px; }
+      header strong { font-size: 15px; }
+      main { max-width: 720px; margin: 0 auto; padding: 36px 24px 64px; }
+      h1 { font-size: 26px; letter-spacing: -0.01em; margin: 0 0 8px; }
+      .lead { color: #667085; margin: 0 0 28px; }
+      .card { background: #fff; border: 1px solid #d9e0e8; border-radius: 10px; padding: 22px; margin-bottom: 18px; }
+      .card h2 { font-size: 15px; margin: 0 0 4px; }
+      .card .hint { color: #667085; font-size: 13px; margin: 0 0 16px; }
+      label { display: block; font-size: 12px; font-weight: 700; color: #475467; margin: 12px 0 6px; }
+      input { width: 100%; border: 1px solid #d9e0e8; border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 14px; }
+      input:focus { outline: none; border-color: #5b2df5; box-shadow: 0 0 0 3px rgba(91,45,245,0.12); }
+      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+      button { background: #5b2df5; color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 650; font-size: 14px; cursor: pointer; }
+      button:hover { filter: brightness(0.95); }
+      button.secondary { background: #fff; color: #15202b; border: 1px solid #d9e0e8; }
+      button.danger { background: #fff; color: #b42318; border: 1px solid #fcd5cf; }
+      .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475467; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; }
+      .dot.green { background: #18a957; }
+      .dot.gray { background: #98a2b3; }
+      .dot.red { background: #d8423d; }
+      .status-pill { background: #f4f6f9; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
+      pre { background: #f4f6f9; border-radius: 8px; padding: 12px; font-size: 12px; overflow-x: auto; margin: 0; }
+      .alert { border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 12px; }
+      .alert.ok { background: #e8f5ed; color: #0f6b34; }
+      .alert.err { background: #fce6e5; color: #9a201c; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/">← Home</a>
+      <span style="color:#cfd5df">|</span>
+      <strong>Settings</strong>
+    </header>
+    <main>
+      <h1>Pylon MCP connection</h1>
+      <p class="lead">Connect this app to your Pylon workspace via the MCP server. The same API token authenticates both <code>mcp.usepylon.com</code> and the REST API.</p>
+
+      <div class="card">
+        <h2>Connection</h2>
+        <p class="hint">Token source: <span class="status-pill">${escapeHtmlServer(tokenSource)}</span></p>
+
+        <label for="mcp-url">Pylon MCP URL</label>
+        <input id="mcp-url" type="url" value="${escapeHtmlServer(config.pylonMcpUrl)}">
+
+        <label for="api-base">Pylon REST API base</label>
+        <input id="api-base" type="url" value="${escapeHtmlServer(config.pylonApiBase)}">
+
+        <label for="api-token">Pylon API token</label>
+        <input id="api-token" type="password" placeholder="${tokenStored ? "•••••••••••• (saved — paste a new value to replace)" : "Paste your token from Pylon admin"}">
+
+        <div class="row">
+          <button id="save-btn">Save</button>
+          <button class="secondary" id="test-btn">Test connection</button>
+          ${tokenStored ? '<button class="danger" id="clear-btn">Clear saved token</button>' : ""}
+          <span class="status"><span class="dot ${tokenStored ? "green" : "gray"}"></span>${tokenStored ? "Token saved" : "Not connected"}</span>
+        </div>
+        <div id="alert"></div>
+      </div>
+
+      <div class="card">
+        <h2>How to get a token</h2>
+        <p class="hint">In Pylon: Settings → API → Create token. Admin role required. The token is stored locally in <code>.pylon-config.json</code> (gitignored).</p>
+      </div>
+    </main>
+    <script>
+      const alertEl = document.getElementById("alert");
+      function showAlert(kind, msg) {
+        alertEl.innerHTML = '<div class="alert ' + kind + '">' + msg + '</div>';
+      }
+      async function postJson(path, payload) {
+        const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        return res.json();
+      }
+      document.getElementById("save-btn").addEventListener("click", async () => {
+        const payload = {
+          pylonMcpUrl: document.getElementById("mcp-url").value,
+          pylonApiBase: document.getElementById("api-base").value,
+          pylonApiToken: document.getElementById("api-token").value
+        };
+        const result = await postJson("/api/settings", payload);
+        if (result.ok) {
+          showAlert("ok", "Settings saved.");
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showAlert("err", "Save failed: " + (result.error || "unknown"));
+        }
+      });
+      document.getElementById("test-btn").addEventListener("click", async () => {
+        showAlert("ok", "Testing...");
+        const result = await postJson("/api/test-mcp", {});
+        if (result.ok) {
+          showAlert("ok", "Connected as " + (result.identity.name || result.identity.email || "Pylon user") + ".");
+        } else {
+          showAlert("err", "Test failed: " + (result.error || "unknown"));
+        }
+      });
+      const clearBtn = document.getElementById("clear-btn");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", async () => {
+          const result = await postJson("/api/settings", { clearToken: true });
+          if (result.ok) window.location.reload();
+        });
+      }
+    </script>
+  </body>
+</html>`;
+}
+
+function escapeHtmlServer(value) {
+  return String(value || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 function composeHtml() {
@@ -687,7 +856,6 @@ function composeHtml() {
 
       <div class="actions">
         <button type="button" class="btn btn-primary" onclick="openWidget('follow-up')">✉ Follow-Up Writer</button>
-        <button type="button" class="btn btn-secondary" onclick="openWidget('warm-intro')">🤝 Warm Intro Mapper</button>
         <button type="button" class="btn btn-secondary" onclick="openWidget('org-map')">🗂 Org Chart Mapper</button>
       </div>
       <script>
