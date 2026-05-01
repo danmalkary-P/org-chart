@@ -24,23 +24,9 @@ export async function buildAccountContext(searchParams, config) {
     return { context: applyManualSalesInputs(context, searchParams), modeInfo };
   }
 
-  try {
-    const context = await buildLiveContext({ accountId, requesterEmail, config });
-    context.mode = "live";
-    return { context: applyManualSalesInputs(context, searchParams), modeInfo };
-  } catch (error) {
-    const context = getMockContext({ accountId, requesterEmail });
-    context.mode = "mock";
-    context.signals.systemWarnings.push(`Live Pylon fetch failed; using mock data. ${error.message}`);
-    return {
-      context: applyManualSalesInputs(context, searchParams),
-      modeInfo: {
-        mode: "mock",
-        requestedMode: "live",
-        reason: error.message
-      }
-    };
-  }
+  const context = await buildLiveContext({ accountId, requesterEmail, config });
+  context.mode = "live";
+  return { context: applyManualSalesInputs(context, searchParams), modeInfo };
 }
 
 async function buildLiveContext({ accountId, requesterEmail, config }) {
@@ -80,7 +66,8 @@ async function buildLiveContext({ accountId, requesterEmail, config }) {
 
   const issues = extractData(await client.searchIssuesByAccount(account.id || resolvedAccountId))
     .map(normalizeIssue)
-    .slice(0, 8);
+    .slice(0, 8)
+    .map((issue) => enrichIssueWithContacts(issue, contacts));
 
   const messages = [];
   for (const issue of issues.slice(0, 3)) {
@@ -93,8 +80,114 @@ async function buildLiveContext({ accountId, requesterEmail, config }) {
     contacts,
     issues,
     messages,
+    accountMetrics: buildAccountMetrics(account, issues),
+    opportunities: buildOpportunities(account),
+    departments: [],
     signals: inferSignals({ account, contacts, issues, messages })
   };
+}
+
+function enrichIssueWithContacts(issue, contacts) {
+  if (issue.requester?.id && (!issue.requester.name || !issue.requester.email)) {
+    const match = contacts.find((c) => c.id === issue.requester.id);
+    if (match) {
+      issue.requester = { id: match.id, name: match.name, email: match.email };
+    }
+  }
+  return issue;
+}
+
+function buildAccountMetrics(account, issues) {
+  const sf = account.salesforce || {};
+  const sentiment = mapSentimentBucket(account.sentiment);
+  return {
+    currentArr: sf.arr ?? null,
+    renewalDate: sf.renewalDate || null,
+    healthScore: account.health?.score ?? null,
+    healthTrend: trendLabel(account.health?.change30d),
+    sentiment,
+    sentimentLabel: account.sentiment || "",
+    relationshipStrength: account.health?.relationshipStrength || "",
+    lifecycle: titleCase(account.lifecycleStage),
+    lifecycleSub: account.industry || "",
+    seatCount: sf.paidSeats ?? null,
+    seatTier: sf.seatTier ? `${sf.seatTier} tier` : "",
+    products: sf.products || [],
+    upsellSignals: account.upsellSignals.map((label) => ({ label, detail: account.aiSummaries.upsellSummary || "" })),
+    riskSignals: account.riskSignals.map((label) => ({ label, detail: "" })),
+    accountIntelligenceSignals: account.accountIntelligenceSignals,
+    nextSteps: account.nextSteps,
+    nextStepsCurrentStatus: account.nextStepsCurrentStatus,
+    aiKickOffContext: account.aiSummaries.kickOffContext,
+    aiLastCallSummary: account.aiSummaries.lastCallSummary,
+    championName: account.championName,
+    lastMeetingDate: account.meetings.lastMeetingDate,
+    nextMeetingDate: account.meetings.nextMeetingDate,
+    issueCount30d: account.issueCount30d,
+    openIssuesLast90d: account.openIssuesLast90d,
+    tags: account.tags || [],
+    recentActivity: buildRecentActivity(account, issues)
+  };
+}
+
+function buildOpportunities(account) {
+  const sf = account.salesforce || {};
+  if (!sf.latestOpportunityName) return [];
+  return [
+    {
+      id: `opp_${account.id}`,
+      name: sf.latestOpportunityName,
+      type: /renewal/i.test(sf.latestOpportunityName) ? "renewal" : /expan|upsell/i.test(sf.latestOpportunityName) ? "expansion" : "new_business",
+      stage: sf.latestOpportunityForecast || "",
+      amount: sf.latestOpportunityArr ?? null,
+      closeDate: sf.latestOpportunityCloseDate || "",
+      health: mapSentimentBucket(account.sentiment),
+      products: sf.products || [],
+      owner: account.owner,
+      notes: sf.contractNotes || account.aiSummaries.upsellSummary || "",
+      nextSteps: account.nextSteps || ""
+    }
+  ];
+}
+
+function buildRecentActivity(account, issues) {
+  const out = [];
+  if (account.meetings.lastMeetingDate) {
+    out.push({
+      text: "Last meeting recorded",
+      when: account.meetings.lastMeetingDate,
+      type: "Meeting",
+      status: account.aiSummaries.lastCallSummary ? "Recap available" : ""
+    });
+  }
+  for (const issue of issues.slice(0, 4)) {
+    if (!issue.latestMessageActivityAt) continue;
+    out.push({
+      text: `${issue.requester?.name || "Customer"}: ${issue.title}`,
+      when: issue.latestMessageActivityAt,
+      type: titleCase(issue.state) || "Issue",
+      status: titleCase(issue.priority)
+    });
+  }
+  return out;
+}
+
+function mapSentimentBucket(label = "") {
+  const lower = String(label).toLowerCase();
+  if (/advocate|positive|champion|enthusi/.test(lower)) return "positive";
+  if (/risk|negative|frustrat|blocked|churn/.test(lower)) return "at_risk";
+  return "neutral";
+}
+
+function trendLabel(change) {
+  if (change == null || Number.isNaN(change)) return "";
+  if (change > 0.1) return "trending up";
+  if (change < -0.1) return "trending down";
+  return "stable";
+}
+
+function titleCase(value = "") {
+  return String(value).replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
 }
 
 function inferSignals({ account, contacts, issues, messages }) {
@@ -136,70 +229,86 @@ function inferSignals({ account, contacts, issues, messages }) {
 
   return {
     relationshipEvents,
-    supportRisks: inferSupportRisks(openIssues, messages),
+    supportRisks: inferSupportRisks(account, openIssues, messages),
     expansionHints: inferExpansionHints({ account, issues, messages }),
-    recentCommitments: inferCommitments(messages),
+    recentCommitments: inferCommitments(account, messages),
     calendarEvents: inferCalendarEvents(account),
-    callActivities: [],
+    callActivities: inferCallActivities(account),
     linkedinPeople: [],
     systemWarnings: []
   };
 }
 
-function inferSupportRisks(openIssues, messages) {
+function inferSupportRisks(account, openIssues, messages) {
   const risks = [];
+
+  for (const label of account.riskSignals || []) {
+    risks.push(label);
+  }
+
   for (const issue of openIssues) {
-    if (["urgent", "high"].includes(issue.priority) || issue.tags?.some((tag) => /risk|block|sso|incident/i.test(tag))) {
-      risks.push(`${issue.title} is still ${issue.state || "open"}${issue.priority ? ` with ${issue.priority} priority` : ""}.`);
+    if (["urgent", "high"].includes(String(issue.priority).toLowerCase()) || issue.tags?.some((tag) => /risk|block|sso|incident|escalat/i.test(tag))) {
+      risks.push(`${issue.title} — ${issue.state || "open"}${issue.priority ? ` (${issue.priority})` : ""}`);
     }
   }
 
   for (const message of messages) {
     if (/block|angry|frustrat|not fixed|urgent|risk/i.test(message.bodyText)) {
-      risks.push(message.bodyText);
+      risks.push(message.bodyText.slice(0, 220));
     }
   }
 
-  return risks.slice(0, 4);
+  return Array.from(new Set(risks)).slice(0, 5);
 }
 
 function inferExpansionHints({ account, issues, messages }) {
-  const hintText = [
-    account.crm?.opportunityName,
-    account.crm?.opportunityStage,
-    account.crm?.opportunityAmount,
-    ...issues.map((issue) => `${issue.title} ${issue.bodyText} ${issue.tags?.join(" ")}`),
-    ...messages.map((message) => message.bodyText)
-  ].join(" ");
-
   const hints = [];
-  if (/expansion|upsell|seat|rollout|enterprise|pilot/i.test(hintText)) {
-    hints.push("Expansion language appears in CRM fields, issue titles, tags, or messages.");
+
+  for (const label of account.upsellSignals || []) hints.push(label);
+  for (const label of account.accountIntelligenceSignals || []) hints.push(label);
+
+  if (account.salesforce?.latestOpportunityName) {
+    const arr = account.salesforce.latestOpportunityArr;
+    hints.push(`${account.salesforce.latestOpportunityName}${arr ? ` · $${arr.toLocaleString()}` : ""}`);
   }
-  if (account.crm?.opportunityAmount) {
-    hints.push(`CRM opportunity amount: ${account.crm.opportunityAmount}.`);
-  }
-  if (account.crm?.opportunityStage) {
-    hints.push(`CRM stage: ${account.crm.opportunityStage}.`);
-  }
-  return hints.slice(0, 4);
+
+  if (account.aiSummaries?.upsellSummary) hints.push(account.aiSummaries.upsellSummary);
+
+  return Array.from(new Set(hints.filter(Boolean))).slice(0, 6);
 }
 
-function inferCommitments(messages) {
-  return messages
-    .filter((message) => /will|by |before|next step|follow up|send/i.test(message.bodyText))
-    .map((message) => message.bodyText)
-    .slice(0, 4);
+function inferCommitments(account, messages) {
+  const commits = [];
+  if (account.nextSteps) commits.push(account.nextSteps);
+  if (account.nextStepsCurrentStatus) commits.push(account.nextStepsCurrentStatus);
+  for (const message of messages) {
+    if (/will|by |before|next step|follow up|send/i.test(message.bodyText)) {
+      commits.push(message.bodyText.slice(0, 220));
+    }
+  }
+  return Array.from(new Set(commits.filter(Boolean))).slice(0, 5);
 }
 
 function inferCalendarEvents(account) {
-  if (!account.crm?.nextMeeting) return [];
+  const events = [];
+  if (account.meetings?.nextMeetingDate) {
+    events.push({
+      title: `${account.name} — upcoming meeting`,
+      startsAt: account.meetings.nextMeetingDate,
+      attendees: [account.owner?.email].filter(Boolean),
+      summary: "From Pylon calendar integration."
+    });
+  }
+  return events;
+}
+
+function inferCallActivities(account) {
+  if (!account.aiSummaries?.lastCallSummary) return [];
   return [
     {
-      title: `${account.name} follow-up`,
-      startsAt: account.crm.nextMeeting,
-      attendees: [account.owner?.email].filter(Boolean),
-      summary: "CRM next meeting field."
+      source: "Last call summary",
+      happenedAt: account.meetings?.lastMeetingDate || "",
+      summary: account.aiSummaries.lastCallSummary
     }
   ];
 }

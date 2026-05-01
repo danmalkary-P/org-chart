@@ -126,6 +126,23 @@ export async function routeRequest({ method = "GET", url: rawUrl = "/", headers 
       return jsonResult(await buildContactDetails(url.searchParams, config));
     }
 
+    if (url.pathname === "/api/accounts/search" && method === "GET") {
+      const q = (url.searchParams.get("q") || "").trim();
+      if (!q) return jsonResult({ accounts: [] });
+      if (!config.pylonApiToken) return jsonResult({ accounts: [], error: "No Pylon token configured." });
+      try {
+        const { PylonClient, normalizeAccount } = await import("./pylonClient.js");
+        const client = new PylonClient({ baseUrl: config.pylonApiBase, token: config.pylonApiToken });
+        const result = await client.searchAccountsByName(q, 10);
+        const accounts = (Array.isArray(result?.data) ? result.data : [])
+          .map(normalizeAccount)
+          .map((a) => ({ id: a.id, name: a.name, domain: a.domains?.[0] || "" }));
+        return jsonResult({ accounts });
+      } catch (error) {
+        return jsonResult({ accounts: [], error: error.message });
+      }
+    }
+
     if (url.pathname === "/api/test-connection" && method === "GET") {
       if (!config.pylonApiToken) {
         return jsonResult({ ok: false, error: "PYLON_API_TOKEN is not set. Add it to your .env file." }, 200);
@@ -311,12 +328,8 @@ function homeHtml(config) {
         --text: #15202b;
         --muted: #667085;
         --border: #d9e0e8;
-        --blue: #0b57d0;
-        --blue-soft: #e8f0fe;
         --purple: #5b2df5;
         --purple-soft: #f1edff;
-        --green: #147a3f;
-        --green-soft: #e8f5ed;
       }
       body {
         margin: 0;
@@ -329,213 +342,229 @@ function homeHtml(config) {
       header {
         background: var(--surface);
         border-bottom: 1px solid var(--border);
-        padding: 18px 32px;
+        padding: 14px 28px;
         display: flex;
         align-items: center;
         gap: 12px;
       }
       .logo {
-        width: 32px;
-        height: 32px;
+        width: 28px; height: 28px;
         background: var(--purple);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        border-radius: 7px;
+        display: flex; align-items: center; justify-content: center;
         color: white;
         font-weight: 800;
-        font-size: 15px;
-        flex-shrink: 0;
-      }
-      .logo-text {
-        font-weight: 700;
-        font-size: 16px;
-        letter-spacing: -0.01em;
-      }
-      .logo-text span {
-        color: var(--muted);
-        font-weight: 400;
-        margin-left: 6px;
-        font-size: 13px;
-      }
-      main {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 48px 24px 64px;
-      }
-      .hero {
-        margin-bottom: 40px;
-      }
-      .hero h1 {
-        font-size: 32px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        margin: 0 0 10px;
-        line-height: 1.2;
-      }
-      .hero p {
-        color: var(--muted);
-        font-size: 17px;
-        margin: 0 0 24px;
-      }
-      .hero-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 16px;
-        border-radius: 7px;
-        font-weight: 650;
         font-size: 14px;
-        text-decoration: none;
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: filter 120ms ease, box-shadow 120ms ease;
       }
-      .btn:hover { filter: brightness(0.94); }
-      .btn-primary { background: var(--purple); color: white; }
-      .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
-      .section-label {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--muted);
-        margin: 0 0 14px;
-      }
-      .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 16px;
-        margin-bottom: 36px;
-      }
-      .card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 20px;
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        transition: border-color 130ms ease, box-shadow 130ms ease, transform 130ms ease;
-      }
-      .card:hover {
-        border-color: var(--purple);
-        box-shadow: 0 4px 16px rgba(91, 45, 245, 0.10);
-        transform: translateY(-2px);
-      }
-      .card-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
+      .logo-text { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+      .logo-text span { color: var(--muted); font-weight: 400; margin-left: 6px; font-size: 13px; }
+      main {
+        min-height: calc(100vh - 60px);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        padding: 24px;
       }
-      .card-icon.blue { background: var(--blue-soft); }
-      .card-icon.purple { background: var(--purple-soft); }
-      .card-icon.green { background: var(--green-soft); }
-      .card h2 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 700;
-      }
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
-        flex: 1;
-      }
-      .card-cta {
-        font-size: 13px;
-        font-weight: 650;
-        color: var(--purple);
+      .search-stack {
+        width: 100%;
+        max-width: 560px;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 4px;
+        gap: 14px;
       }
-      .status-bar {
+      .search-stack h1 {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0 0 4px;
+        text-align: center;
+      }
+      .search-stack .lead {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0 0 8px;
+        text-align: center;
+      }
+      .search-wrapper { position: relative; width: 100%; }
+      .search-input {
+        width: 100%;
+        padding: 14px 18px 14px 46px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 16px;
+        font-family: inherit;
+        background: var(--surface);
+        color: var(--text);
+        outline: none;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+      }
+      .search-input:focus {
+        border-color: var(--purple);
+        box-shadow: 0 0 0 3px rgba(91,45,245,0.14);
+      }
+      .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        pointer-events: none;
+        font-size: 17px;
+      }
+      .search-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0; right: 0;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 10px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+        z-index: 100;
+        overflow: hidden;
+      }
+      .search-dropdown.hidden { display: none; }
+      .dropdown-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
         padding: 12px 16px;
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        font-size: 13px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 80ms ease;
       }
-      .status-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--muted);
+      .dropdown-item:hover, .dropdown-item.active { background: var(--purple-soft); }
+      .dropdown-item-name { font-weight: 600; color: var(--text); }
+      .dropdown-item-domain { font-size: 12px; color: var(--muted); }
+      .dropdown-empty { padding: 12px 16px; font-size: 13px; color: var(--muted); }
+      .hint { color: var(--muted); font-size: 12px; }
+      .hint kbd {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        padding: 1px 6px;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
       }
-      .status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 999px;
-        flex-shrink: 0;
-      }
-      .dot-green { background: #2dce89; }
-      .dot-yellow { background: #f6c90e; }
-      .status-item strong { color: var(--text); }
     </style>
   </head>
   <body>
     <header>
       <div class="logo">P</div>
-      <div>
-        <div class="logo-text">Pylon Sales Heat<span>Sales intelligence widgets</span></div>
-      </div>
+      <div class="logo-text">Pylon Sales Heat<span>${config.pylonApiToken ? "Live mode" : "Configure token in Settings"}</span></div>
     </header>
     <main>
-      <div class="hero">
-        <h1>Support-aware sales workflows</h1>
-        <p>Turn Pylon account context into follow-up emails, warm intro paths, and org chart maps — right inside your CRM sidebar.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="/compose">Build a demo with your inputs</a>
-          <a class="btn btn-secondary" href="/pylon/endpoints.json">API endpoints</a>
+      <div class="search-stack">
+        <h1>Look up an account</h1>
+        <p class="lead">Search Pylon by account name, then hit <kbd>↵</kbd> to open the org chart.</p>
+        <div class="search-wrapper">
+          <span class="search-icon">⌕</span>
+          <input id="account-search" class="search-input" type="text" placeholder="Search accounts…" autocomplete="off" autofocus>
+          <div id="search-dropdown" class="search-dropdown hidden"></div>
         </div>
-      </div>
-
-      <div class="section-label">Try the widgets (demo account: Acme Robotics)</div>
-      <div class="cards">
-        <a class="card" href="/preview/follow-up?account_id=acme-risk">
-          <div class="card-icon blue">✉</div>
-          <h2>Follow-Up Writer</h2>
-          <p>Drafts a post-call email grounded in open Pylon issues, calendar context, and committed next steps. Keeps promises separate from commercial asks.</p>
-          <div class="card-cta">Open preview →</div>
-        </a>
-        <a class="card" href="/preview/org-map?account_id=acme-risk">
-          <div class="card-icon purple">🗂</div>
-          <h2>Org Chart Mapper</h2>
-          <p>Builds an interactive buying-team hierarchy from Pylon contacts. Drag people into position, see coverage gaps, and track decision-maker paths.</p>
-          <div class="card-cta">Open preview →</div>
-        </a>
-      </div>
-
-      <div class="status-bar">
-        <div class="status-item">
-          <div class="status-dot ${config.pylonApiToken ? "dot-green" : "dot-yellow"}"></div>
-          <span>Live Pylon data: <strong>${config.pylonApiToken ? "connected" : "not configured"}</strong></span>
-        </div>
-        <div class="status-item">
-          <div class="status-dot dot-green"></div>
-          <span>Mode: <strong>${config.demoMode}</strong></span>
-        </div>
-        <div class="status-item">
-          <a href="/health" style="color: inherit; text-decoration: none;">Health check ↗</a>
-        </div>
+        <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>↵</kbd> to open, <kbd>esc</kbd> to clear</div>
       </div>
     </main>
+    <script>
+      const searchInput = document.getElementById("account-search");
+      const dropdown = document.getElementById("search-dropdown");
+
+      let debounceTimer = null;
+      let activeIndex = -1;
+      let results = [];
+
+      function openAccount(id) {
+        if (!id) return;
+        window.location.href = "/preview/org-map?account_id=" + encodeURIComponent(id);
+      }
+
+      function closeDropdown() {
+        dropdown.classList.add("hidden");
+        dropdown.innerHTML = "";
+        activeIndex = -1;
+        results = [];
+      }
+
+      function renderDropdown(items, query) {
+        results = items;
+        activeIndex = items.length ? 0 : -1;
+        if (!items.length) {
+          dropdown.innerHTML = '<div class="dropdown-empty">No accounts found for "' + escapeHtml(query) + '"</div>';
+        } else {
+          dropdown.innerHTML = items.map((item, i) =>
+            '<div class="dropdown-item' + (i === 0 ? ' active' : '') + '" data-index="' + i + '">' +
+              '<span class="dropdown-item-name">' + escapeHtml(item.name) + '</span>' +
+              (item.domain ? '<span class="dropdown-item-domain">' + escapeHtml(item.domain) + '</span>' : '') +
+            '</div>'
+          ).join("");
+          dropdown.querySelectorAll(".dropdown-item").forEach((el) => {
+            el.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              const idx = parseInt(el.dataset.index, 10);
+              openAccount(results[idx].id);
+            });
+          });
+        }
+        dropdown.classList.remove("hidden");
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      }
+
+      async function doSearch(q) {
+        if (!q) { closeDropdown(); return; }
+        try {
+          const res = await fetch("/api/accounts/search?q=" + encodeURIComponent(q));
+          const data = await res.json();
+          if (searchInput.value.trim() !== q) return;
+          if (data.error && !(data.accounts || []).length) {
+            dropdown.innerHTML = '<div class="dropdown-empty">' + escapeHtml(data.error) + '</div>';
+            dropdown.classList.remove("hidden");
+            return;
+          }
+          renderDropdown(data.accounts || [], q);
+        } catch {
+          closeDropdown();
+        }
+      }
+
+      searchInput.addEventListener("input", () => {
+        const q = searchInput.value.trim();
+        clearTimeout(debounceTimer);
+        if (!q) { closeDropdown(); return; }
+        debounceTimer = setTimeout(() => doSearch(q), 220);
+      });
+
+      searchInput.addEventListener("keydown", (e) => {
+        const items = dropdown.querySelectorAll(".dropdown-item");
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          activeIndex = Math.min(activeIndex + 1, items.length - 1);
+          items.forEach((el, i) => el.classList.toggle("active", i === activeIndex));
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          activeIndex = Math.max(activeIndex - 1, 0);
+          items.forEach((el, i) => el.classList.toggle("active", i === activeIndex));
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          const target = activeIndex >= 0 ? results[activeIndex] : results[0];
+          if (target) openAccount(target.id);
+        } else if (e.key === "Escape") {
+          if (!dropdown.classList.contains("hidden")) {
+            closeDropdown();
+          } else {
+            searchInput.value = "";
+          }
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) closeDropdown();
+      });
+    </script>
   </body>
 </html>`;
 }

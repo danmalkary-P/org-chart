@@ -2292,8 +2292,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const opportunitiesById = new Map(opportunities.map((o) => [o.id, o]));
       const peopleById = new Map(people.map((person) => [person.id, person]));
 
-      // Hydrate any custom contacts saved from previous sessions.
-      const CUSTOM_CONTACTS_KEY = "orgmap.customContacts.v1";
+      // Hydrate any custom contacts saved from previous sessions — scoped per-account so
+      // people added on one account don't leak into another.
+      const CUSTOM_CONTACTS_KEY = \`orgmap.customContacts.v2.\${accountId || "default"}\`;
+      const LEGACY_CONTACTS_KEY = "orgmap.customContacts.v1";
       function loadSavedCustomContacts() {
         try {
           const raw = localStorage.getItem(CUSTOM_CONTACTS_KEY);
@@ -2315,6 +2317,20 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           // Storage may be unavailable — fail silently.
         }
       }
+      // One-time cleanup: drop the unscoped legacy bucket and any stale v2 buckets that
+      // were polluted with mock contacts before live Pylon mode shipped. Guarded by a
+      // versioned flag so we only purge once per browser.
+      try {
+        localStorage.removeItem(LEGACY_CONTACTS_KEY);
+        const PURGE_FLAG = "orgmap.customContacts.purged.v3";
+        if (!localStorage.getItem(PURGE_FLAG)) {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("orgmap.customContacts.v2.")) localStorage.removeItem(key);
+          }
+          localStorage.setItem(PURGE_FLAG, "1");
+        }
+      } catch (err) {}
       loadSavedCustomContacts().forEach((person) => {
         if (!person?.id || peopleById.has(person.id)) return;
         people.push(person);
