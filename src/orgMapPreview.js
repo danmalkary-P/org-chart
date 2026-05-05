@@ -2,6 +2,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
   const peopleJson = JSON.stringify(analysis.nodes).replace(/</g, "\\u003c");
   const suggestedRootsJson = JSON.stringify(suggestedRootIds(analysis.nodes)).replace(/</g, "\\u003c");
   const accountIdJson = JSON.stringify(analysis.accountId || "").replace(/</g, "\\u003c");
+  const accountNameJson = JSON.stringify(analysis.accountName || "").replace(/</g, "\\u003c");
   const opportunitiesJson = JSON.stringify(context.opportunities || []).replace(/</g, "\\u003c");
   const accountMetricsJson = JSON.stringify(context.accountMetrics || {}).replace(/</g, "\\u003c");
   const issuesJson = JSON.stringify(context.issues || []).replace(/</g, "\\u003c");
@@ -2244,6 +2245,14 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       const people = ${peopleJson};
       const suggestedRoots = ${suggestedRootsJson};
       const accountId = ${accountIdJson};
+      const accountName = ${accountNameJson};
+      function pylonSlackChannel(name) {
+        if (!name) return "";
+        const slug = String(name).toLowerCase().trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        return slug ? "#pylon-" + slug : "";
+      }
       const opportunities = ${opportunitiesJson};
       const accountMetrics = ${accountMetricsJson};
       const issues = ${issuesJson};
@@ -3319,7 +3328,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
             title: person.title,
             email: person.email,
             phone: person.phone || "",
-            accountId: person.accountId || "acme-risk",
+            accountId: person.accountId || accountId || "",
             portalRole: person.buyingRole || "",
             customFields: ai
           },
@@ -3352,7 +3361,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           detailSection("Profile", [
             ["Email", contact.email],
             ["Phone", contact.phone],
-            ["Account", contact.accountId],
+            ["Channel", pylonSlackChannel(accountName)],
             ["Portal role", contact.portalRole]
           ]),
           detailSection("Links", [
