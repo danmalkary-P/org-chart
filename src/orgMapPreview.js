@@ -1125,6 +1125,79 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .insight-card h2 {
         margin-bottom: 4px;
       }
+      .insight-card-full { grid-column: 1 / -1; }
+      .connections-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .connections-empty {
+        color: var(--muted);
+        font-size: 13px;
+        padding: 4px 0;
+      }
+      .connection-item {
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .connection-item-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .connection-item-from, .connection-item-to {
+        color: var(--text);
+      }
+      .connection-item-arrow {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .connection-item-delete {
+        margin-left: auto;
+        background: none;
+        border: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        opacity: 0.6;
+        transition: opacity 80ms ease, background 80ms ease, color 80ms ease;
+      }
+      .connection-item-delete:hover { opacity: 1; background: rgba(0,0,0,0.05); color: var(--negative); }
+      .connection-item-email {
+        color: var(--text-2);
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        max-height: 96px;
+        overflow: hidden;
+        position: relative;
+      }
+      .connection-item.expanded .connection-item-email {
+        max-height: none;
+      }
+      .connection-item-toggle {
+        align-self: flex-start;
+        background: none;
+        border: 0;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+      }
+      .connection-item-toggle:hover { text-decoration: underline; }
       ul { margin: 8px 0 0; padding-left: 18px; color: var(--text-2); }
       li { margin-bottom: 6px; font-size: 13px; }
 
@@ -2144,6 +2217,10 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
                 <h2>Gaps</h2>
                 <ul>${(analysis.gaps.length ? analysis.gaps : ["No critical account-map gaps found."]).map((gap) => `<li>${escapeHtml(gap)}</li>`).join("")}</ul>
               </div>
+              <div class="insight-card insight-card-full" id="connections-card">
+                <h2>Saved Connections</h2>
+                <div id="connections-list" class="connections-list"></div>
+              </div>
             </section>
           </div>
 
@@ -3062,7 +3139,65 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       function render() {
         renderContacts();
         renderTree();
+        renderConnections();
         scheduleChartStateSave();
+      }
+
+      function renderConnections() {
+        const list = document.querySelector("#connections-list");
+        if (!list) return;
+        if (!state.connections.length) {
+          list.innerHTML = '<div class="connections-empty">No saved connections yet. Click "Make a connection" above the chart to draft one.</div>';
+          return;
+        }
+        const EMAIL_PREVIEW = 220;
+        list.innerHTML = state.connections.map((conn) => {
+          const from = peopleById.get(conn.fromId);
+          const to = peopleById.get(conn.toId);
+          const fromName = from?.name || "Unknown";
+          const toName = to?.name || "Unknown";
+          const email = conn.email || "";
+          const truncated = email.length > EMAIL_PREVIEW;
+          const preview = truncated ? email.slice(0, EMAIL_PREVIEW) + "…" : email;
+          return \`
+            <div class="connection-item" data-conn-id="\${escapeHtml(conn.id)}">
+              <div class="connection-item-head">
+                <span class="connection-item-from">\${escapeHtml(fromName)}</span>
+                <span class="connection-item-arrow">→</span>
+                <span class="connection-item-to">\${escapeHtml(toName)}</span>
+                <button type="button" class="connection-item-delete" data-conn-delete="\${escapeHtml(conn.id)}" title="Delete">×</button>
+              </div>
+              \${email ? \`<div class="connection-item-email">\${escapeHtml(preview)}</div>\` : ""}
+              \${truncated ? \`<button type="button" class="connection-item-toggle" data-conn-toggle="\${escapeHtml(conn.id)}">Show full email</button>\` : ""}
+            </div>
+          \`;
+        }).join("");
+        list.querySelectorAll("[data-conn-delete]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute("data-conn-delete");
+            state.connections = state.connections.filter((c) => c.id !== id);
+            render();
+          });
+        });
+        list.querySelectorAll("[data-conn-toggle]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-conn-toggle");
+            const conn = state.connections.find((c) => c.id === id);
+            if (!conn) return;
+            const item = btn.closest(".connection-item");
+            const emailEl = item?.querySelector(".connection-item-email");
+            if (item.classList.contains("expanded")) {
+              item.classList.remove("expanded");
+              emailEl.textContent = conn.email.slice(0, 220) + "…";
+              btn.textContent = "Show full email";
+            } else {
+              item.classList.add("expanded");
+              emailEl.textContent = conn.email;
+              btn.textContent = "Hide";
+            }
+          });
+        });
       }
 
       function renderContacts() {
