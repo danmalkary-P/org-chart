@@ -2695,7 +2695,8 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         if (id) placeAtRoot(id);
       });
 
-      applySuggestedLayout();
+      // Start with an empty chart — everyone appears in the sidebar
+      // for the user to drag onto the canvas.
       render();
       autoFitTree();
       setupNavigation();
