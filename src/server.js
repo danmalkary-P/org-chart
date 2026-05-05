@@ -909,6 +909,19 @@ function composeHtml() {
 </html>`;
 }
 
+// Vercel serverless handler — default export required by @vercel/node
+export default async function handler(req, res) {
+  const body = await readBody(req);
+  const result = await routeRequest({
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body,
+  });
+  res.writeHead(result.statusCode, result.headers);
+  res.end(result.body);
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const config = loadConfig();
   const server = createAppServer({ config });
