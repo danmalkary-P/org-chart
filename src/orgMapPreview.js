@@ -3328,7 +3328,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           pylonNextSteps: nextStepsByPerson[person.id] || fallbackNextSteps,
           pylonGaps: gapsByPerson[person.id] || fallbackGaps,
           links: {
-            pylonContact: \`https://app.usepylon.com/contacts/\${person.id || ""}\`,
+            pylonContact: accountId ? \`https://app.usepylon.com/accounts/\${accountId}\` : "",
             evidence: person.linkedinUrl || ""
           },
           crmFields: [],

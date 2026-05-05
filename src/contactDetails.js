@@ -150,8 +150,10 @@ function buildResearchLeadDetails({ node, context, modeInfo }) {
 
 function buildContactPayload({ mode, sourceNote, account, contact, node, issues, messages, systemWarnings }) {
   const fields = contact.customFields || {};
-  const pylonContact = contact.id && !isResearchLeadId(contact.id)
-    ? `https://app.usepylon.com/contacts/${encodeURIComponent(contact.id)}`
+  // Link to the contact's account page in Pylon, not the contact record.
+  const accountIdForLink = contact.accountId || account?.id || "";
+  const pylonContact = accountIdForLink
+    ? `https://app.usepylon.com/accounts/${encodeURIComponent(accountIdForLink)}`
     : "";
 
   return {
