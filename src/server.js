@@ -438,6 +438,81 @@ function homeHtml(config) {
       .dropdown-item-name { font-weight: 600; color: var(--text); }
       .dropdown-item-domain { font-size: 12px; color: var(--muted); }
       .dropdown-empty { padding: 12px 16px; font-size: 13px; color: var(--muted); }
+      .recent-accounts {
+        width: 100%;
+        margin-top: 6px;
+      }
+      .recent-accounts.hidden { display: none; }
+      .recent-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 6px;
+        padding: 0 4px;
+      }
+      .recent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .recent-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 80ms ease;
+      }
+      .recent-item:hover { background: var(--surface); }
+      .recent-item-icon {
+        width: 24px; height: 24px;
+        border-radius: 6px;
+        background: var(--purple-soft);
+        color: var(--purple);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700;
+        font-size: 11px;
+        flex-shrink: 0;
+      }
+      .recent-item-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+      }
+      .recent-item-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .recent-item-domain {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .recent-item-remove {
+        background: none;
+        border: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 80ms ease, background 80ms ease, color 80ms ease;
+      }
+      .recent-item:hover .recent-item-remove { opacity: 1; }
+      .recent-item-remove:hover { background: rgba(0,0,0,0.05); color: var(--text); }
       .hint { color: var(--muted); font-size: 12px; }
       .hint kbd {
         background: var(--surface);
@@ -465,6 +540,10 @@ function homeHtml(config) {
           <div id="search-dropdown" class="search-dropdown hidden"></div>
         </div>
         <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>↵</kbd> to open, <kbd>esc</kbd> to clear</div>
+        <div id="recent-accounts" class="recent-accounts hidden">
+          <div class="recent-label">Recent</div>
+          <div id="recent-list" class="recent-list"></div>
+        </div>
       </div>
     </main>
     <script>
@@ -475,8 +554,68 @@ function homeHtml(config) {
       let activeIndex = -1;
       let results = [];
 
-      function openAccount(id) {
+      const RECENT_KEY = "pylon-recent-accounts";
+      const RECENT_MAX = 8;
+
+      function loadRecent() {
+        try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
+        catch { return []; }
+      }
+      function saveRecent(account) {
+        try {
+          const list = loadRecent().filter((a) => a.id !== account.id);
+          list.unshift({
+            id: account.id,
+            name: account.name || "",
+            domain: account.domain || "",
+            viewedAt: Date.now()
+          });
+          localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+        } catch {}
+      }
+      function removeRecent(id) {
+        try {
+          const list = loadRecent().filter((a) => a.id !== id);
+          localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+          renderRecent();
+        } catch {}
+      }
+      function renderRecent() {
+        const wrap = document.getElementById("recent-accounts");
+        const list = document.getElementById("recent-list");
+        const items = loadRecent();
+        if (!items.length) { wrap.classList.add("hidden"); return; }
+        wrap.classList.remove("hidden");
+        list.innerHTML = items.map((a) =>
+          '<div class="recent-item" data-id="' + escapeHtml(a.id) + '">' +
+            '<div class="recent-item-icon">' + escapeHtml(((a.name || "?").trim().charAt(0) || "?").toUpperCase()) + '</div>' +
+            '<div class="recent-item-text">' +
+              '<span class="recent-item-name">' + escapeHtml(a.name || "Unknown") + '</span>' +
+              (a.domain ? '<span class="recent-item-domain">' + escapeHtml(a.domain) + '</span>' : '') +
+            '</div>' +
+            '<button class="recent-item-remove" type="button" title="Remove" data-remove="' + escapeHtml(a.id) + '">×</button>' +
+          '</div>'
+        ).join("");
+        list.querySelectorAll(".recent-item").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            if (e.target.closest(".recent-item-remove")) return;
+            const id = el.dataset.id;
+            const item = loadRecent().find((a) => a.id === id);
+            if (item) openAccount(item);
+          });
+        });
+        list.querySelectorAll(".recent-item-remove").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            removeRecent(el.dataset.remove);
+          });
+        });
+      }
+
+      function openAccount(account) {
+        const id = typeof account === "string" ? account : (account && account.id);
         if (!id) return;
+        if (account && typeof account === "object") saveRecent(account);
         window.location.href = "/preview/org-map?account_id=" + encodeURIComponent(id);
       }
 
@@ -503,7 +642,7 @@ function homeHtml(config) {
             el.addEventListener("mousedown", (e) => {
               e.preventDefault();
               const idx = parseInt(el.dataset.index, 10);
-              openAccount(results[idx].id);
+              openAccount(results[idx]);
             });
           });
         }
@@ -551,7 +690,7 @@ function homeHtml(config) {
         } else if (e.key === "Enter") {
           e.preventDefault();
           const target = activeIndex >= 0 ? results[activeIndex] : results[0];
-          if (target) openAccount(target.id);
+          if (target) openAccount(target);
         } else if (e.key === "Escape") {
           if (!dropdown.classList.contains("hidden")) {
             closeDropdown();
@@ -564,6 +703,8 @@ function homeHtml(config) {
       document.addEventListener("click", (e) => {
         if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) closeDropdown();
       });
+
+      renderRecent();
     </script>
   </body>
 </html>`;
