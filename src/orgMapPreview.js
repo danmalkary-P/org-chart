@@ -2330,6 +2330,76 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         connections: []
       };
 
+      // Snapshot the seed IDs so we know later which departments were created
+      // by the user (and need to be persisted as part of chart state).
+      const seedDeptIds = new Set(people.filter((p) => p.type === "department").map((p) => p.id));
+
+      // ============ Chart-state persistence (per account, in localStorage) ============
+      const CHART_STATE_KEY = \`orgmap.chartState.v1.\${accountId || "default"}\`;
+      let chartSaveTimer = null;
+      function loadChartState() {
+        try {
+          const raw = localStorage.getItem(CHART_STATE_KEY);
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== "object") return;
+          // Restore custom departments before we restore structural state, so
+          // their IDs are valid in roots/childrenById.
+          (saved.customDepartments || []).forEach((dept) => {
+            if (!dept?.id || peopleById.has(dept.id)) return;
+            people.push({ ...dept, type: "department" });
+            peopleById.set(dept.id, peopleById.get(dept.id) || people[people.length - 1]);
+          });
+          // Restore the structural fields. Filter to known IDs in case people
+          // were removed from the seed since the last save.
+          const known = (id) => peopleById.has(id);
+          if (Array.isArray(saved.roots)) {
+            state.roots = saved.roots.filter(known);
+          }
+          if (saved.childrenById && typeof saved.childrenById === "object") {
+            for (const [parentId, childIds] of Object.entries(saved.childrenById)) {
+              if (!known(parentId) || !Array.isArray(childIds)) continue;
+              state.childrenById[parentId] = childIds.filter(known);
+            }
+          }
+          if (saved.notesById) Object.assign(state.notesById, saved.notesById);
+          if (saved.linkedinById) Object.assign(state.linkedinById, saved.linkedinById);
+          if (saved.customTitles) Object.assign(state.customTitles, saved.customTitles);
+          if (saved.customNames) Object.assign(state.customNames, saved.customNames);
+          if (Array.isArray(saved.connections)) state.connections = saved.connections;
+        } catch (err) {
+          // Bad JSON or storage error — ignore and start fresh.
+        }
+      }
+      function saveChartStateNow() {
+        try {
+          const customDepartments = people
+            .filter((p) => p.type === "department" && !seedDeptIds.has(p.id))
+            .map((p) => ({ id: p.id, name: p.name, type: "department" }));
+          const payload = {
+            schemaVersion: 1,
+            updatedAt: Date.now(),
+            roots: state.roots,
+            childrenById: state.childrenById,
+            notesById: state.notesById,
+            linkedinById: state.linkedinById,
+            customTitles: state.customTitles,
+            customNames: state.customNames,
+            connections: state.connections,
+            customDepartments
+          };
+          localStorage.setItem(CHART_STATE_KEY, JSON.stringify(payload));
+        } catch (err) {
+          // Quota exceeded or storage unavailable — fail silently.
+        }
+      }
+      function scheduleChartStateSave() {
+        if (chartSaveTimer) clearTimeout(chartSaveTimer);
+        chartSaveTimer = setTimeout(saveChartStateNow, 400);
+      }
+      // Hydrate any saved chart for this account before the first render.
+      loadChartState();
+
       // Account summary + opportunity sidebar
       const viewProfileLink = document.querySelector("#view-profile-link");
       const summaryArr = document.querySelector("#summary-arr");
@@ -2959,6 +3029,7 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       function render() {
         renderContacts();
         renderTree();
+        scheduleChartStateSave();
       }
 
       function renderContacts() {

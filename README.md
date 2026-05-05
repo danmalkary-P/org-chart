@@ -1,4 +1,4 @@
-# Pylon Sales Heat
+# Org Mapper
 
 Two Pylon Custom App sidebar widgets for sales workflows:
 

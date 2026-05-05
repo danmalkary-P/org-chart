@@ -319,7 +319,7 @@ function homeHtml(config) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pylon Sales Heat</title>
+    <title>Org Mapper</title>
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       :root {
@@ -528,7 +528,7 @@ function homeHtml(config) {
   <body>
     <header>
       <div class="logo">P</div>
-      <div class="logo-text">Pylon Sales Heat<span>${config.pylonApiToken ? "Live mode" : "Configure token in Settings"}</span></div>
+      <div class="logo-text">Org Mapper<span>${config.pylonApiToken ? "Live mode" : "Configure token in Settings"}</span></div>
     </header>
     <main>
       <div class="search-stack">
@@ -718,7 +718,7 @@ function settingsHtml(config) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Settings — Pylon Sales Heat</title>
+    <title>Settings — Org Mapper</title>
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       body { margin: 0; background: #f6f8fb; color: #15202b; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.5; }
@@ -842,7 +842,7 @@ function composeHtml() {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Input Builder — Pylon Sales Heat</title>
+    <title>Input Builder — Org Mapper</title>
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       :root {
@@ -1067,6 +1067,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const config = loadConfig();
   const server = createAppServer({ config });
   server.listen(config.port, () => {
-    console.log(`Pylon Sales Heat listening on http://localhost:${config.port}`);
+    console.log(`Org Mapper listening on http://localhost:${config.port}`);
   });
 }
