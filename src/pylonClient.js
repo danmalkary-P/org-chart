@@ -175,7 +175,21 @@ export function normalizeAccount(raw = {}) {
 export function normalizeContact(raw = {}) {
   const emails = normalizeEmails(raw);
   const fields = flattenCustomFields(raw.custom_fields);
-  const role = fields["contact.salesforce.Title"] || fields.title || raw.title || "";
+  // Pylon stores contact titles inconsistently across customers (Salesforce sync,
+  // HubSpot sync, manual custom fields). Try the common locations in order.
+  const role = fields["contact.salesforce.Title"]
+    || fields["contact.hubspot.Title"]
+    || fields["contact.hubspot.jobtitle"]
+    || fields["contact.title"]
+    || fields.title
+    || fields.job_title
+    || fields.jobtitle
+    || fields.contact_title
+    || fields.role
+    || fields.position
+    || raw.title
+    || raw.job_title
+    || "";
   return {
     id: raw.id || "",
     name: raw.name || raw.email || "Unknown contact",

@@ -1138,6 +1138,28 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       .contacts-panel-inner {
         position: sticky;
         top: 16px;
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 4px;
+        scrollbar-width: thin;
+      }
+      .contacts-panel-inner::-webkit-scrollbar { width: 8px; }
+      .contacts-panel-inner::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+      .contacts-panel-inner::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+      .buying-role-select {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 8px;
+        color: var(--text);
+      }
+      .buying-role-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: var(--ring-focus);
       }
       .contacts-head {
         align-items: start;
@@ -2159,7 +2181,16 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
           </div>
           <div id="add-contact-form" class="add-contact-form">
             <input id="new-contact-name" type="text" placeholder="Full name" autocomplete="off">
-            <input id="new-contact-title" type="text" placeholder="Title / role" autocomplete="off">
+            <input id="new-contact-title" type="text" placeholder="Title (e.g. VP Operations)" autocomplete="off">
+            <select id="new-contact-buying-role" class="buying-role-select">
+              <option value="">Buying role (optional)</option>
+              <option value="Champion">Champion</option>
+              <option value="Economic buyer">Economic buyer</option>
+              <option value="Technical approver">Technical approver</option>
+              <option value="Operational buyer">Operational buyer</option>
+              <option value="Access path">Access path</option>
+              <option value="Potential stakeholder">Potential stakeholder</option>
+            </select>
             <div class="add-contact-form-actions">
               <button type="button" class="primary" id="save-new-contact">Add contact</button>
               <button type="button" class="secondary" id="cancel-new-contact">Cancel</button>
@@ -2732,10 +2763,12 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
       document.querySelector("#save-new-contact").addEventListener("click", () => {
         const name = document.querySelector("#new-contact-name").value.trim();
         const title = document.querySelector("#new-contact-title").value.trim();
+        const buyingRole = document.querySelector("#new-contact-buying-role").value;
         if (!name) { document.querySelector("#new-contact-name").focus(); return; }
-        addCustomContact(name, title || "—");
+        addCustomContact(name, title || "—", buyingRole);
         document.querySelector("#new-contact-name").value = "";
         document.querySelector("#new-contact-title").value = "";
+        document.querySelector("#new-contact-buying-role").value = "";
         addContactForm.classList.remove("open");
       });
       document.querySelector("#new-contact-name").addEventListener("keydown", (e) => {
@@ -3799,12 +3832,12 @@ export function renderOrgMapPreview({ analysis, context = {} }) {
         render();
       }
 
-      function addCustomContact(name, title) {
+      function addCustomContact(name, title, buyingRole) {
         const id = "custom_" + Math.random().toString(36).slice(2, 9);
         const person = {
           id, name, title,
           relationship: "Neutral / unknown",
-          buyingRole: "Unknown",
+          buyingRole: buyingRole || "Unknown",
           source: "Manual",
           email: "", owner: "", notes: "", level: "Unknown"
         };
